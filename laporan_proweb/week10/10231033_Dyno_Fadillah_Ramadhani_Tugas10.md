@@ -1,8 +1,55 @@
-### Tugas 10 
-### Nama	    : Dyno Fadillah Ramadhani
-### NIM	        : 10231033
-### Kelompok    : 6
+# Laporan Progres Mingguan - SORA
+**Kelompok**: 6
 
+**Mitra**: Rumah Makan Salwa
+
+**Pekan ke-**: 10
+
+**Tanggal**: 18/04/2025
+
+---
+## Anggota Kelompok ##
+
+- **Amazia Devid Saputra dengan NIM 10231013** 
+- **Dyno Fadillah Ramadhani dengan NIM 10231033**
+- **Rani Ayu Dewi dengan NIM 10231079**
+- **Siti Nur Azizah Putri Awni dengan NIM 10231087**
+
+---
+
+## Progress Summary
+Minggu ini tim telah berhasil membuat Entity Relationship Diagram (ERD) untuk sistem yang mencakup 7 entitas utama (super_admin, admin, pelanggan, menus, reservations, payments, cart). Implementasi backend menggunakan Laravel dengan endpoint dasar untuk autentikasi dan manajemen menu telah selesai dibuat. Struktur frontend dengan React dan React Router juga telah diimplementasikan termasuk komponen Layout, halaman Login, dan sistem routing dasar.
+
+## Accomplished Tasks
+- Membuat Entity Relationship Diagram (ERD) dengan 7 entitas utama dan relasi antar tabelnya
+- Mengimplementasikan backend skeleton dengan Laravel termasuk AuthController dan MenuController
+- Membuat struktur routing API dengan endpoint untuk auth, menu, reservasi dan cart
+- Mengimplementasikan frontend skeleton dengan React dan React Router
+- Membuat komponen Layout utama dengan navigasi dan footer
+- Mengimplementasikan halaman Login dengan form validasi dan state management
+
+## Challenges & Solutions
+- **Challenge 1**: Kompleksitas Relasi Database
+    - **Solution**: Membuat ERD yang terstruktur dengan 7 entitas utama (super_admin, admin, pelanggan, menus, reservations, payments, cart) dan mendefinisikan relasi one-to-many yang jelas antar tabel
+
+- **Challenge 2**: Implementasi Autentikasi Multi-User
+    - **Solution**: Menggunakan Laravel Sanctum untuk authentication dan membuat AuthController dengan validasi yang robust untuk register dan login
+
+- **Challenge 3**: Frontend State Management
+    - **Solution**: Implementasi sistem routing dengan React Router dan state management untuk autentikasi user menggunakan localStorage
+
+## Next Week Plan
+- Sistem Autentikasi: Login/Register/Logout
+- Core Feature #1: Fitur utama pertama sesuai kebutuhan mitra
+- Integration Test: Bukti pengujian integrasi
+
+## Contributions
+- **Amazia Devid Saputra**: Membantu membuat laporan (md), membuat struktur frontend
+- **Dyno Fadillah Ramadhani**: Membantu membuat laporan (md), membuat struktur ERD, membuat struktur backend, dan halaman backend
+- **Rani Ayu Dewi**: Membantu membuat laporan (md), membuat tampilan frontend
+- **Siti Nur Azizah Putri Awni**: Membantu membuat laporan (md), membuat database pada PostgreSQL
+
+## Screenshots / Demo
 ## 1. ERD (Entity Relationship Diagram)
 <img src="skema_erd_sora.png">
 
@@ -48,6 +95,12 @@
 ## 2. Backend Skeleton (Endpoint Dasar)
 
 Saya telah mengimplementasikan beberapa endpoint REST API dasar menggunakan Laravel. Berikut adalah beberapa endpoint yang sudah berfungsi:
+
+### Halaman Dashboard SuperAdmin
+<img src="view_superadmin.png">
+
+### Halaman Dashboard Admin
+<img src="view_admin.png">
 
 ### Controller Auth
 

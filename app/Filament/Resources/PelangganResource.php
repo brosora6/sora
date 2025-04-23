@@ -45,6 +45,12 @@ class PelangganResource extends Resource
                     ->tel()
                     ->required()
                     ->maxLength(255),
+                Forms\Components\FileUpload::make('profile_photo')
+                    ->image()
+                    ->directory('profile-photos')
+                    ->visibility('public')
+                    ->imageEditor()
+                    ->circleCropper(),
             ]);
     }
 

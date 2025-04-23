@@ -29,10 +29,14 @@ class MenuResource extends Resource
                 Forms\Components\TextInput::make('price')
                     ->required()
                     ->numeric()
-                    ->prefix('$'),
-                Forms\Components\TextInput::make('gambar')
-                    ->required()
-                    ->maxLength(255),
+                    ->prefix('Rp'),
+                Forms\Components\FileUpload::make('gambar')
+                    ->image()
+                    ->disk('public')
+                    ->directory('menu-photos')
+                    ->visibility('public')
+                    ->imageEditor()
+                    ->required(),
                 Forms\Components\TextInput::make('stok')
                     ->required()
                     ->numeric(),
@@ -48,11 +52,13 @@ class MenuResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
+                Tables\Columns\ImageColumn::make('gambar')
+                    ->disk('public')
+                    ->square()
+                    ->defaultImageUrl(asset('storage/placeholder.png')),
                 Tables\Columns\TextColumn::make('price')
-                    ->money()
+                    ->money('IDR')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('gambar')
-                    ->searchable(),
                 Tables\Columns\TextColumn::make('stok')
                     ->numeric()
                     ->sortable(),

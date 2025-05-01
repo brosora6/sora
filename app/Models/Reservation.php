@@ -9,6 +9,10 @@ class Reservation extends Model
 {
     use HasFactory;
 
+    const STATUS_PENDING = 'pending';
+    const STATUS_CONFIRMED = 'confirmed';
+    const STATUS_REJECTED = 'rejected';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -20,6 +24,8 @@ class Reservation extends Model
         'waktu',
         'jumlah_orang',
         'note',
+        'status',
+        'staff_whatsapp',
     ];
 
     /**
@@ -28,5 +34,29 @@ class Reservation extends Model
     public function pelanggan()
     {
         return $this->belongsTo(Pelanggan::class);
+    }
+
+    /**
+     * Check if the reservation is confirmed
+     */
+    public function isConfirmed(): bool
+    {
+        return $this->status === self::STATUS_CONFIRMED;
+    }
+
+    /**
+     * Check if the reservation is pending
+     */
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    /**
+     * Check if the reservation is rejected
+     */
+    public function isRejected(): bool
+    {
+        return $this->status === self::STATUS_REJECTED;
     }
 }

@@ -8,6 +8,7 @@ use App\Models\Payment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PaymentController extends Controller
 {
@@ -29,35 +30,38 @@ class PaymentController extends Controller
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'bank' => 'required|string|max:255',
-            'no_bank' => 'required|string|max:255',
+            'payment_proof' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'total_amount' => 'required|numeric|min:0',
         ]);
 
-        // Get cart items
-        $carts = Cart::where('pelanggan_id', Auth::guard('customer')->id())->get();
-        
-        if ($carts->isEmpty()) {
+        try {
+            // Store the payment proof image
+            $path = $request->file('payment_proof')->store('payment-proofs', 'public');
+
+            // Create payment record
+            $payment = Payment::create([
+                'pelanggan_id' => auth()->id(),
+                'total_amount' => $request->total_amount,
+                'payment_proof' => $path,
+                'status' => 'pending'
+            ]);
+
+            // Associate cart items with the payment instead of deleting them
+            Cart::where('pelanggan_id', auth()->id())
+                ->whereNull('payment_id')
+                ->update(['payment_id' => $payment->id]);
+
             return response()->json([
-                'message' => 'Cart is empty'
-            ], 422);
+                'message' => 'Payment submitted successfully',
+                'payment' => $payment
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to process payment',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $total = $carts->sum('total_price');
-
-        // Create payment
-        $payment = Payment::create([
-            'pelanggan_id' => Auth::guard('customer')->id(),
-            'bank' => $request->bank,
-            'no_bank' => $request->no_bank,
-            'total_price' => $total,
-            'status' => 'pending',
-            'tanggal' => now(),
-        ]);
-
-        // Clear cart
-        $carts->each->delete();
-
-        return response()->json($payment, 201);
     }
 
     /**

@@ -20,6 +20,7 @@ class Pelanggan extends Authenticatable
         'email',
         'password',
         'no_telepon',
+        'profile_photo',
     ];
 
     /**

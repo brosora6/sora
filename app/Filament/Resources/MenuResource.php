@@ -17,7 +17,9 @@ class MenuResource extends Resource
 {
     protected static ?string $model = Menu::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard';
+    protected static ?string $navigationGroup = 'Menu and Reservation Management';
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -55,7 +57,8 @@ class MenuResource extends Resource
                 Tables\Columns\ImageColumn::make('gambar')
                     ->disk('public')
                     ->square()
-                    ->defaultImageUrl(asset('storage/placeholder.png')),
+                    ->defaultImageUrl('/images/placeholder.png')
+                    ->visibility('public'),
                 Tables\Columns\TextColumn::make('price')
                     ->money('IDR')
                     ->sortable(),

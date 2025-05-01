@@ -18,7 +18,9 @@ class SuperAdminResource extends Resource
 {
     protected static ?string $model = SuperAdmin::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-shield-check';
+    protected static ?string $navigationGroup = 'Users Management';
+    protected static ?int $navigationSort = 1;
     
     // Only show this resource to SuperAdmins
     public static function canAccess(): bool

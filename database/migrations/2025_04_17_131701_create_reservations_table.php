@@ -18,6 +18,8 @@ return new class extends Migration
             $table->time('waktu');
             $table->integer('jumlah_orang');
             $table->text('note')->nullable();
+            $table->enum('status', ['pending', 'confirmed', 'rejected'])->default('pending');
+            $table->string('staff_whatsapp')->nullable();
             $table->timestamps();
         });
     }

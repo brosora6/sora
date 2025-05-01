@@ -7,6 +7,7 @@ use App\Models\Reservation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class ReservationController extends Controller
 {
@@ -15,10 +16,11 @@ class ReservationController extends Controller
      */
     public function index(): JsonResponse
     {
-        $reservations = Reservation::where('pelanggan_id', Auth::guard('customer')->id())
-            ->orderBy('tanggal', 'desc')
+        $reservations = Reservation::where('pelanggan_id', Auth::id())
+            ->with('pelanggan')
+            ->latest()
             ->get();
-        
+
         return response()->json($reservations);
     }
 
@@ -27,19 +29,24 @@ class ReservationController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'tanggal' => 'required|date|after_or_equal:today',
             'waktu' => 'required',
-            'jumlah_orang' => 'required|integer|min:1',
+            'jumlah_orang' => 'required|integer|min:1|max:20',
             'note' => 'nullable|string',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
         $reservation = Reservation::create([
-            'pelanggan_id' => Auth::guard('customer')->id(),
+            'pelanggan_id' => Auth::id(),
             'tanggal' => $request->tanggal,
             'waktu' => $request->waktu,
             'jumlah_orang' => $request->jumlah_orang,
             'note' => $request->note,
+            'status' => 'pending',
         ]);
 
         return response()->json($reservation, 201);
@@ -48,14 +55,11 @@ class ReservationController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Reservation $reservation): JsonResponse
+    public function show(string $id): JsonResponse
     {
-        // Check if the reservation belongs to the authenticated user
-        if ($reservation->pelanggan_id !== Auth::guard('customer')->id()) {
-            return response()->json([
-                'message' => 'Unauthorized'
-            ], 403);
-        }
+        $reservation = Reservation::where('pelanggan_id', Auth::id())
+            ->with('pelanggan')
+            ->findOrFail($id);
 
         return response()->json($reservation);
     }
@@ -63,28 +67,27 @@ class ReservationController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Reservation $reservation): JsonResponse
+    public function update(Request $request, string $id): JsonResponse
     {
-        // Check if the reservation belongs to the authenticated user
-        if ($reservation->pelanggan_id !== Auth::guard('customer')->id()) {
-            return response()->json([
-                'message' => 'Unauthorized'
-            ], 403);
-        }
+        $reservation = Reservation::where('pelanggan_id', Auth::id())->findOrFail($id);
 
-        $request->validate([
-            'tanggal' => 'required|date|after_or_equal:today',
-            'waktu' => 'required',
-            'jumlah_orang' => 'required|integer|min:1',
+        $validator = Validator::make($request->all(), [
+            'tanggal' => 'sometimes|required|date|after_or_equal:today',
+            'waktu' => 'sometimes|required',
+            'jumlah_orang' => 'sometimes|required|integer|min:1|max:20',
             'note' => 'nullable|string',
         ]);
 
-        $reservation->update([
-            'tanggal' => $request->tanggal,
-            'waktu' => $request->waktu,
-            'jumlah_orang' => $request->jumlah_orang,
-            'note' => $request->note,
-        ]);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $reservation->update($request->only([
+            'tanggal',
+            'waktu',
+            'jumlah_orang',
+            'note',
+        ]));
 
         return response()->json($reservation);
     }
@@ -92,24 +95,11 @@ class ReservationController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Reservation $reservation): JsonResponse
+    public function destroy(string $id): JsonResponse
     {
-        // Check if the reservation belongs to the authenticated user
-        if ($reservation->pelanggan_id !== Auth::guard('customer')->id()) {
-            return response()->json([
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
-        // Check if the reservation is in the future and more than 1 day away
-        if (now()->diffInDays($reservation->tanggal) <= 1) {
-            return response()->json([
-                'message' => 'Reservations can only be cancelled more than 24 hours in advance'
-            ], 422);
-        }
-
+        $reservation = Reservation::where('pelanggan_id', Auth::id())->findOrFail($id);
         $reservation->delete();
 
-        return response()->json(null, 204);
+        return response()->json([], 204);
     }
 } 

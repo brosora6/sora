@@ -17,6 +17,7 @@ class Payment extends Model
      */
     protected $fillable = [
         'pelanggan_id',
+        'order_number',
         'total_amount',
         'payment_proof',
         'status'

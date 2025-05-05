@@ -393,16 +393,18 @@ export default function Profile({ auth, status, mustVerifyEmail }: ProfileProps)
                                                         <div key={reservation.id} className="bg-[#121212] p-4 border border-gray-800">
                                                             <div className="flex items-center justify-between mb-3">
                                                                 <div>
-                                                                    <p className="font-medium">Reservation #{reservation.id}</p>
+                                                                    <p className="font-medium">Reservasi #{reservation.id}</p>
                                                                     <p className="text-sm text-gray-400">
-                                                                        {new Date(reservation.reservation_date).toLocaleDateString('en-US', {
-                                                                            weekday: 'long',
-                                                                            year: 'numeric',
-                                                                            month: 'long',
-                                                                            day: 'numeric',
-                                                                            hour: '2-digit',
-                                                                            minute: '2-digit'
-                                                                        })}
+                                                                        {(() => {
+                                                                            const date = new Date(reservation.tanggal);
+                                                                            const time = reservation.waktu;
+                                                                            return `${date.toLocaleDateString('id-ID', {
+                                                                                weekday: 'long',
+                                                                                year: 'numeric',
+                                                                                month: 'long',
+                                                                                day: 'numeric'
+                                                                            })} pukul ${time} WIB`;
+                                                                        })()}
                                                                     </p>
                                                                 </div>
                                                                 <div className={`px-3 py-1 rounded-full text-sm ${
@@ -480,7 +482,12 @@ export default function Profile({ auth, status, mustVerifyEmail }: ProfileProps)
                                                         <div key={payment.id} className="bg-[#121212] p-4 border border-gray-800">
                                                             <div className="flex items-center justify-between mb-3">
                                                                 <div>
-                                                                    <p className="font-medium">Payment #{payment.id}</p>
+                                                                    <p className="font-medium">
+                                                                        {payment.order_number}
+                                                                        <span className="text-gray-500 text-sm ml-2">
+                                                                            (Payment #{payment.id})
+                                                                        </span>
+                                                                    </p>
                                                                     <p className="text-sm text-gray-400">
                                                                         {new Date(payment.created_at).toLocaleDateString('en-US', {
                                                                             year: 'numeric',

@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('pelanggan_id')->constrained('pelanggans')->onDelete('cascade');
+            $table->string('order_number')->unique();
             $table->decimal('total_amount', 10, 2);
             $table->string('payment_proof');
             $table->enum('status', ['pending', 'completed', 'failed'])->default('pending');

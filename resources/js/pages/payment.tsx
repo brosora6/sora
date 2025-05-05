@@ -73,7 +73,7 @@ export default function Payment({ auth, carts }: PaymentProps) {
       })
 
       toast.success("Payment submitted successfully")
-      router.visit("/payment/success")
+      router.visit(`/payment/success?order=${response.data.payment.order_number}`)
     } catch (error: any) {
       console.error("Payment error:", error)
       toast.error(error.response?.data?.message || "Failed to process payment")

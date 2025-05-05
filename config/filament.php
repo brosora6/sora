@@ -11,10 +11,6 @@ return [
                 'guard' => 'superadmin',
                 'model' => \App\Models\SuperAdmin::class,
             ],
-            'customer' => [
-                'guard' => 'customer',
-                'model' => \App\Models\Pelanggan::class,
-            ],
         ],
     ],
 ]; 

@@ -54,6 +54,11 @@ class PaymentResource extends Resource
         return $table
             ->modifyQueryUsing(fn (Builder $query) => $query->with('carts.menu'))
             ->columns([
+                Tables\Columns\TextColumn::make('order_number')
+                    ->searchable()
+                    ->sortable()
+                    ->copyable()
+                    ->label('Order Number'),
                 Tables\Columns\TextColumn::make('pelanggan.name')
                     ->searchable()
                     ->sortable()

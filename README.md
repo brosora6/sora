@@ -79,13 +79,19 @@
    php artisan migrate --seed
    ```
 
-7. **Mulai server pengembangan:**
+7. **Buat symbolic link untuk storage dan atur permission:**
+   ```bash
+   php artisan storage:link
+   chmod -R 775 public/storage
+   ```
+
+8. **Mulai server pengembangan:**
    - Jalankan perintah berikut untuk memulai backend Laravel dan frontend Vite:
      ```bash
      composer run dev
      ```
 
-8. **Akses website:**
+9. **Akses website:**
    - **Superadmin:** Akses panel admin di [http://127.0.0.1:8000/superadmin](http://127.0.0.1:8000/superadmin)
    - **Admin:** Akses panel admin di [http://127.0.0.1:8000/admin](http://127.0.0.1:8000/admin)
    - **Pelanggan:** Akses frontend di [http://127.0.0.1:8000](http://127.0.0.1:8000) (atau seperti yang ditunjukkan di terminal Anda)

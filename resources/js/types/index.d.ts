@@ -35,9 +35,28 @@ export interface User {
     id: number;
     name: string;
     email: string;
-    avatar?: string;
-    email_verified_at: string | null;
-    created_at: string;
-    updated_at: string;
-    [key: string]: unknown; // This allows for additional properties...
+    email_verified_at?: string;
 }
+
+export interface Pelanggan {
+    id: number;
+    name: string;
+    email: string;
+    no_telepon?: string;
+    profile_photo?: string;
+}
+
+export interface Reservation {
+    id: number;
+    pelanggan: Pelanggan;
+    reservation_date: string;
+    status: 'pending' | 'confirmed' | 'rejected';
+    staff_whatsapp?: string;
+}
+
+export interface PageProps<T = Record<string, unknown>> {
+    auth: {
+        user: User;
+    };
+    errors: Record<string, string>;
+} & T;

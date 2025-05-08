@@ -8,9 +8,31 @@ use App\Models\Payment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class PaymentController extends Controller
 {
+    /**
+     * Generate a unique order number
+     */
+    private function generateOrderNumber(): string
+    {
+        $prefix = 'ORD';
+        $timestamp = now()->format('Ymd');
+        $random = strtoupper(Str::random(4));
+        $orderNumber = "{$prefix}-{$timestamp}-{$random}";
+
+        // Ensure uniqueness
+        while (Payment::where('order_number', $orderNumber)->exists()) {
+            $random = strtoupper(Str::random(4));
+            $orderNumber = "{$prefix}-{$timestamp}-{$random}";
+        }
+
+        return $orderNumber;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -28,36 +50,64 @@ class PaymentController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
-            'bank' => 'required|string|max:255',
-            'no_bank' => 'required|string|max:255',
-        ]);
+        try {
+            // Add logging to debug
+            Log::info('Payment request received', ['request' => $request->all()]);
+            
+            $request->validate([
+                'payment_proof' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+                'total_amount' => 'required|numeric|min:0',
+            ]);
 
-        // Get cart items
-        $carts = Cart::where('pelanggan_id', Auth::guard('customer')->id())->get();
-        
-        if ($carts->isEmpty()) {
+            // Get the authenticated customer's ID
+            $customerId = Auth::guard('customer')->id();
+            
+            if (!$customerId) {
+                Log::error('No authenticated customer found');
+                return response()->json([
+                    'message' => 'Unauthorized',
+                    'error' => 'No authenticated customer found'
+                ], 401);
+            }
+
+            // Store the payment proof image
+            $path = $request->file('payment_proof')->store('payment-proofs', 'public');
+
+            // Generate unique order number
+            $orderNumber = $this->generateOrderNumber();
+
+            // Create payment record
+            $payment = Payment::create([
+                'pelanggan_id' => $customerId,
+                'order_number' => $orderNumber,
+                'total_amount' => $request->total_amount,
+                'payment_proof' => $path,
+                'status' => 'pending'
+            ]);
+
+            // Associate cart items with the payment
+            Cart::where('pelanggan_id', $customerId)
+                ->whereNull('payment_id')
+                ->update(['payment_id' => $payment->id]);
+
+            Log::info('Payment created successfully', ['payment' => $payment]);
+
             return response()->json([
-                'message' => 'Cart is empty'
-            ], 422);
+                'message' => 'Payment submitted successfully',
+                'payment' => $payment
+            ], 201);
+
+        } catch (\Exception $e) {
+            Log::error('Payment processing failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to process payment',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $total = $carts->sum('total_price');
-
-        // Create payment
-        $payment = Payment::create([
-            'pelanggan_id' => Auth::guard('customer')->id(),
-            'bank' => $request->bank,
-            'no_bank' => $request->no_bank,
-            'total_price' => $total,
-            'status' => 'pending',
-            'tanggal' => now(),
-        ]);
-
-        // Clear cart
-        $carts->each->delete();
-
-        return response()->json($payment, 201);
     }
 
     /**

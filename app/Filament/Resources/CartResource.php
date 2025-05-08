@@ -17,21 +17,28 @@ class CartResource extends Resource
 {
     protected static ?string $model = Cart::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
+    protected static ?string $navigationGroup = 'Transaction Management';
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('pelanggan_id')
+                Forms\Components\Select::make('pelanggan_id')
+                    ->relationship('pelanggan', 'name')
+                    ->required(),
+                Forms\Components\Select::make('menu_id')
+                    ->relationship('menu', 'name')
+                    ->required(),
+                Forms\Components\TextInput::make('quantity')
                     ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('menus_id')
+                    ->numeric()
+                    ->minValue(1),
+                Forms\Components\TextInput::make('price')
                     ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('total_price')
-                    ->required()
-                    ->numeric(),
+                    ->numeric()
+                    ->prefix('Rp'),
             ]);
     }
 
@@ -39,29 +46,28 @@ class CartResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('pelanggan_id')
+                Tables\Columns\TextColumn::make('pelanggan.name')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('menu.name')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('quantity')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('menus_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('total_price')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('price')
+                    ->money('IDR')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
             ])
             ->filters([
                 //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

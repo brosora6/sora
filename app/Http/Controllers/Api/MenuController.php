@@ -10,11 +10,15 @@ use Illuminate\Http\Request;
 class MenuController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of active menus.
      */
     public function index(): JsonResponse
     {
-        $menus = Menu::where('stok', '>', 0)->get();
+        $menus = Menu::with('category')
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
+
         return response()->json($menus);
     }
 
@@ -23,6 +27,6 @@ class MenuController extends Controller
      */
     public function show(Menu $menu): JsonResponse
     {
-        return response()->json($menu);
+        return response()->json($menu->load('category'));
     }
 } 

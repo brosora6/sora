@@ -32,9 +32,9 @@ return [
     |
     */
 
-    'lifetime' => (int) env('SESSION_LIFETIME', 120),
+    'lifetime' => env('SESSION_LIFETIME', 120),
 
-    'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
+    'expire_on_close' => false,
 
     /*
     |--------------------------------------------------------------------------
@@ -47,7 +47,7 @@ return [
     |
     */
 
-    'encrypt' => env('SESSION_ENCRYPT', false),
+    'encrypt' => true,
 
     /*
     |--------------------------------------------------------------------------
@@ -86,7 +86,7 @@ return [
     |
     */
 
-    'table' => env('SESSION_TABLE', 'sessions'),
+    'table' => 'sessions',
 
     /*
     |--------------------------------------------------------------------------
@@ -127,10 +127,7 @@ return [
     |
     */
 
-    'cookie' => env(
-        'SESSION_COOKIE',
-        Str::slug(env('APP_NAME', 'laravel'), '_').'_session'
-    ),
+    'cookie' => env('SESSION_COOKIE', 'laravel_session'),
 
     /*
     |--------------------------------------------------------------------------
@@ -143,7 +140,7 @@ return [
     |
     */
 
-    'path' => env('SESSION_PATH', '/'),
+    'path' => '/',
 
     /*
     |--------------------------------------------------------------------------
@@ -156,7 +153,7 @@ return [
     |
     */
 
-    'domain' => env('SESSION_DOMAIN'),
+    'domain' => null,
 
     /*
     |--------------------------------------------------------------------------
@@ -169,7 +166,7 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => env('SESSION_SECURE_COOKIE', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -182,7 +179,7 @@ return [
     |
     */
 
-    'http_only' => env('SESSION_HTTP_ONLY', true),
+    'http_only' => true,
 
     /*
     |--------------------------------------------------------------------------
@@ -191,15 +188,13 @@ return [
     |
     | This option determines how your cookies behave when cross-site requests
     | take place, and can be used to mitigate CSRF attacks. By default, we
-    | will set this value to "lax" to permit secure cross-site requests.
-    |
-    | See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value
+    | will set this value to "lax" since this is a secure default value.
     |
     | Supported: "lax", "strict", "none", null
     |
     */
 
-    'same_site' => env('SESSION_SAME_SITE', 'lax'),
+    'same_site' => 'lax',
 
     /*
     |--------------------------------------------------------------------------
@@ -212,6 +207,59 @@ return [
     |
     */
 
-    'partitioned' => env('SESSION_PARTITIONED_COOKIE', false),
+    'partitioned' => false,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Session Names Per Guard
+    |--------------------------------------------------------------------------
+    |
+    | Here you may specify different session names for different authentication
+    | guards. This allows multiple authenticated sessions to run simultaneously.
+    |
+    */
+
+    'names' => [
+        'customer' => 'customer_session',
+        'admin' => 'admin_session',
+        'superadmin' => 'superadmin_session',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Guard-Specific Session Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Here you may specify session configuration for specific authentication
+    | guards. This allows you to have different session settings for different
+    | parts of your application.
+    |
+    */
+
+    'guards' => [
+        'customer' => [
+            'cookie' => 'customer_session',
+            'path' => '/',
+            'domain' => null,
+            'secure' => env('APP_ENV') === 'production',
+            'http_only' => true,
+            'same_site' => 'lax',
+        ],
+        'admin' => [
+            'cookie' => 'admin_session',
+            'path' => '/admin',
+            'domain' => null,
+            'secure' => env('APP_ENV') === 'production',
+            'http_only' => true,
+            'same_site' => 'lax',
+        ],
+        'superadmin' => [
+            'cookie' => 'superadmin_session',
+            'path' => '/superadmin',
+            'domain' => null,
+            'secure' => env('APP_ENV') === 'production',
+            'http_only' => true,
+            'same_site' => 'lax',
+        ],
+    ],
 ];

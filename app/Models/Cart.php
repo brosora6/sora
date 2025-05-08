@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Cart extends Model
 {
@@ -12,27 +13,47 @@ class Cart extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @var array
+     * @var array<int, string>
      */
     protected $fillable = [
         'pelanggan_id',
-        'menus_id',
-        'total_price',
+        'menu_id',
+        'quantity',
+        'price',
+        'payment_id',
     ];
 
     /**
-     * Get the pelanggan that owns the Cart
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
      */
-    public function pelanggan()
+    protected $casts = [
+        'quantity' => 'integer',
+        'price' => 'integer',
+    ];
+
+    /**
+     * Get the menu that owns the cart item.
+     */
+    public function menu(): BelongsTo
+    {
+        return $this->belongsTo(Menu::class);
+    }
+
+    /**
+     * Get the customer that owns the cart item.
+     */
+    public function pelanggan(): BelongsTo
     {
         return $this->belongsTo(Pelanggan::class);
     }
 
     /**
-     * Get the menu that owns the Cart
+     * Get the payment associated with the cart item.
      */
-    public function menu()
+    public function payment()
     {
-        return $this->belongsTo(Menu::class, 'menus_id');
+        return $this->belongsTo(Payment::class);
     }
 }

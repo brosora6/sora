@@ -11,13 +11,41 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class AdminResource extends Resource
 {
     protected static ?string $model = Admin::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-cog';
+    protected static ?string $navigationGroup = 'User Management';
+    protected static ?int $navigationSort = 2;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user() instanceof \App\Models\SuperAdmin;
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user() instanceof \App\Models\SuperAdmin;
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->guard('superadmin')->check();
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return auth()->guard('superadmin')->check();
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return auth()->guard('superadmin')->check();
+    }
 
     public static function form(Form $form): Form
     {

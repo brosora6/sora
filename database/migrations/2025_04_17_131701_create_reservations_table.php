@@ -13,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('reservations', function (Blueprint $table) {
             $table->id();
+            $table->string('order_number')->unique();
             $table->foreignId('pelanggan_id')->constrained('pelanggans')->onDelete('cascade');
             $table->date('tanggal');
             $table->time('waktu');
             $table->integer('jumlah_orang');
             $table->text('note')->nullable();
+            $table->enum('status', ['pending', 'confirmed', 'rejected'])->default('pending');
             $table->timestamps();
         });
     }

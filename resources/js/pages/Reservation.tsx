@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import InputError from "@/components/input-error"
 import { motion, AnimatePresence } from "framer-motion"
+import { useTranslation } from "@/contexts/TranslationContext"
 
 interface OpeningHours {
   [key: string]: string[]
@@ -55,9 +56,9 @@ type ReservationForm = {
 declare function route(name: string, params?: any): string
 
 export default function Reservation({ auth, reservation, openingHours = {}, whatsappNumber }: ReservationProps) {
+  const { t } = useTranslation()
   const [selectedDay, setSelectedDay] = useState<string>("")
   const [currentStep, setCurrentStep] = useState(1)
-  const [showConfetti, setShowConfetti] = useState(false)
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null)
   const [hoveredDay, setHoveredDay] = useState<string | null>(null)
   const [animateBackground, setAnimateBackground] = useState(false)
@@ -115,16 +116,8 @@ export default function Reservation({ auth, reservation, openingHours = {}, what
       return
     }
 
-    post(route("reservations.store"), {
-      onSuccess: () => {
-        // Show success animation
-        setShowConfetti(true)
-
-        // Wait for animation before redirect
-        setTimeout(() => {
-          window.location.href = route("reservations")
-        }, 2000)
-      },
+    post(route("reservation.store"), {
+      preserveScroll: true,
       onError: (errors) => {
         console.error("Reservation failed:", errors)
       },
@@ -160,11 +153,37 @@ export default function Reservation({ auth, reservation, openingHours = {}, what
   const actualOpeningHours = Object.keys(openingHours).length > 0 ? openingHours : defaultOpeningHours
 
   const getCurrentDayHours = () => {
-    if (!selectedDay || !actualOpeningHours[selectedDay]) return null
-    return actualOpeningHours[selectedDay]
+    const englishDay = selectedDay || ""
+    if (!actualOpeningHours[englishDay]) return null
+    return actualOpeningHours[englishDay]
   }
 
   const hours = getCurrentDayHours()
+
+  // Function to get translated day name
+  const getTranslatedDay = (day: string) => {
+    const dayKey = day.toLowerCase()
+    return t(`days.${dayKey}`)
+  }
+
+  // Function to format date that returns English day name for internal use
+  const formatDateForInternal = (dateString: string) => {
+    if (!dateString) return ""
+    const date = new Date(dateString)
+    return date.toLocaleDateString("en-US", { weekday: "long" })
+  }
+
+  // Function to format date for display that uses translated day name
+  const formatDateForDisplay = (dateString: string) => {
+    if (!dateString) return ""
+    const date = new Date(dateString)
+    const dayName = getTranslatedDay(date.toLocaleDateString("en-US", { weekday: "long" }))
+    return `${dayName}, ${date.toLocaleDateString(undefined, {
+      month: "long",
+      day: "numeric",
+      year: "numeric"
+    })}`
+  }
 
   // Generate time slots based on opening hours
   const generateTimeSlots = () => {
@@ -223,957 +242,348 @@ export default function Reservation({ auth, reservation, openingHours = {}, what
     setData("waktu", time)
   }
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return ""
-    const date = new Date(dateString)
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    })
-  }
+  const whatsappNumberToUse = whatsappNumber?.replace(/[^0-9]/g, '') || ''
 
-  const whatsappNumberToUse = whatsappNumber || "+6281234567890"
+  const openWhatsApp = () => {
+    const url = `https://wa.me/${whatsappNumberToUse}`
+    if (/Android|iPhone/i.test(navigator.userAgent)) {
+      window.location.href = url
+    } else {
+      window.open(url, '_blank')
+    }
+  }
 
   return (
     <>
-      <Head title="Reservation | Rumah Makan Salwa" />
+      <Head title={t("reservation.title")} />
       <Navbar auth={auth} />
 
-      {/* Enhanced confetti effect when reservation is successful */}
-      {showConfetti && (
-        <div className="fixed inset-0 z-50 pointer-events-none">
-          {Array.from({ length: 150 }).map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-2 h-2 rounded-full"
-              initial={{
-                top: "-10%",
-                left: `${Math.random() * 100}%`,
-                opacity: 1,
-              }}
-              animate={{
-                top: "110%",
-                opacity: 0,
-                rotate: Math.random() * 360,
-              }}
-              transition={{
-                duration: Math.random() * 2 + 1,
-                ease: "easeOut",
-                delay: Math.random() * 0.5,
-              }}
-              style={{
-                backgroundColor: ["#ffffff", "#F59E0B", "#FBBF24", "#D97706", "#92400E"][Math.floor(Math.random() * 5)],
-                width: `${Math.random() * 6 + 2}px`,
-                height: `${Math.random() * 6 + 2}px`,
-              }}
-            />
-          ))}
-
-          {/* Add sparkle effects */}
-          {Array.from({ length: 20 }).map((_, i) => (
-            <motion.div
-              key={`sparkle-${i}`}
-              className="absolute"
-              initial={{
-                scale: 0,
-                opacity: 0,
-                x: `${Math.random() * 100}%`,
-                y: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                scale: [0, 1, 0],
-                opacity: [0, 1, 0],
-              }}
-              transition={{
-                duration: 1.5,
-                delay: Math.random() * 2,
-                repeat: 2,
-                repeatDelay: Math.random() * 2,
-              }}
-            >
-              <Star className="text-amber-400 h-8 w-8" />
-            </motion.div>
-          ))}
-        </div>
-      )}
-
-      <main className="bg-gradient-to-b from-[#0f0f0f] to-[#1a1a1a] text-white min-h-screen pt-24 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Enhanced Hero Section with parallax effect */}
+      <main className="bg-gradient-to-b from-[#0f0f0f] to-[#1a1a1a] text-white min-h-screen pt-12 sm:pt-20 lg:pt-24 pb-6 sm:pb-12 lg:pb-16">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+          {/* Hero Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="mb-12 text-center relative overflow-hidden py-16 rounded-2xl bg-gradient-to-r from-amber-900/20 to-amber-800/10"
+            className="mb-4 sm:mb-8 lg:mb-12 text-center relative overflow-hidden py-6 sm:py-12 lg:py-16 rounded-lg sm:rounded-2xl bg-gradient-to-r from-amber-900/20 to-amber-800/10"
           >
-            {/* Background elements with parallax effect */}
-            <motion.div
-              className="absolute inset-0 opacity-20 pointer-events-none"
-              initial={{ scale: 1.1 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 1.5 }}
-            >
-              <div className="absolute top-0 left-1/4 w-32 h-32 rounded-full bg-amber-500/10"></div>
-              <div className="absolute bottom-0 right-1/4 w-48 h-48 rounded-full bg-amber-500/10"></div>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-amber-500/10"></div>
-            </motion.div>
-
-            <motion.div
-              className="relative z-10"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.8 }}
-            >
-              <Utensils className="h-16 w-16 mx-auto mb-6 text-amber-400" />
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 relative">Reserve Your Table</h1>
-              <p className="text-gray-300 max-w-2xl mx-auto relative">
-                Book your table at Rumah Makan Salwa and enjoy authentic Indonesian cuisine in a warm, welcoming
-                atmosphere.
+            <motion.div className="relative z-10 px-3 sm:px-6">
+              <Utensils className="h-10 w-10 sm:h-16 sm:w-16 mx-auto mb-3 sm:mb-6 text-amber-400" />
+              <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-4 relative">
+                {t("reservation.title")}
+              </h1>
+              <p className="text-xs sm:text-base text-gray-300 max-w-2xl mx-auto relative">
+                {t("reservation.subtitle")}
               </p>
             </motion.div>
-
-            {/* Animated decorative elements */}
-            <motion.div
-              className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-amber-500/30"
-              initial={{ width: 0 }}
-              animate={{ width: 128 }}
-              transition={{ delay: 0.6, duration: 0.8 }}
-            ></motion.div>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Opening Hours with enhanced animations */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="lg:col-span-1"
-            >
-              <div className="bg-[#1a1a1a] border border-gray-800 p-6 rounded-xl sticky top-24 overflow-hidden relative">
-                {/* Animated background effect */}
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent"
-                  animate={{
-                    opacity: [0.05, 0.1, 0.05],
-                  }}
-                  transition={{
-                    repeat: Number.POSITIVE_INFINITY,
-                    duration: 3,
-                    ease: "easeInOut",
-                  }}
-                ></motion.div>
-
-                <h2 className="text-xl font-bold mb-6 flex items-center relative">
-                  <motion.div
-                    animate={{
-                      rotate: [0, 360],
-                    }}
-                    transition={{
-                      repeat: Number.POSITIVE_INFINITY,
-                      duration: 15,
-                      ease: "linear",
-                    }}
-                    className="mr-2"
-                  >
-                    <Clock className="w-5 h-5 text-amber-400" />
-                  </motion.div>
-                  Opening Hours
-                </h2>
-
-                <div className="space-y-3 relative">
-                  {Object.entries(actualOpeningHours).map(([day, hours], index) => (
-                    <motion.div
-                      key={day}
-                      className={`flex justify-between p-3 rounded-lg ${
-                        selectedDay === day
-                          ? "border-amber-500/50 bg-amber-500/10"
-                          : hoveredDay === day
-                            ? "border-gray-700 bg-[#1f1f1f]"
-                            : "border-gray-800 bg-[#1a1a1a]"
-                      } transition-colors duration-200`}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 * index, duration: 0.3 }}
-                      onMouseEnter={() => setHoveredDay(day)}
-                      onMouseLeave={() => setHoveredDay(null)}
-                      whileHover={{ scale: 1.02, boxShadow: "0 0 10px rgba(245,158,11,0.1)" }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <span className="font-medium">{day}</span>
-                      <span className="text-amber-400">
-                        {hours[0]} - {hours[1]}
-                      </span>
-                    </motion.div>
-                  ))}
-                </div>
-
-                <motion.div
-                  className="mt-8 pt-6 border-t border-gray-800 relative"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.8, duration: 0.5 }}
-                >
-                  <h3 className="text-lg font-medium mb-4 flex items-center">
-                    <Info className="w-4 h-4 mr-2 text-amber-400" />
-                    Need Assistance?
-                  </h3>
-                  <Button
-                    variant="outline"
-                    className="w-full flex items-center justify-center gap-2 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 group relative overflow-hidden rounded-lg h-12"
-                    onClick={() => window.open(`https://wa.me/${whatsappNumberToUse}`, "_blank")}
-                  >
-                    <motion.div
-                      animate={{
-                        x: [-2, 2, -2],
-                      }}
-                      transition={{
-                        repeat: Number.POSITIVE_INFINITY,
-                        duration: 1.5,
-                        ease: "easeInOut",
-                      }}
-                    >
-                      <Phone className="w-4 h-4" />
-                    </motion.div>
-                    <span>Contact via WhatsApp</span>
-                    <motion.div
-                      className="absolute inset-0 bg-amber-500/10 opacity-0 group-hover:opacity-100"
-                      initial={{ x: "-100%" }}
-                      whileHover={{ x: "100%" }}
-                      transition={{ duration: 1 }}
-                    />
-                  </Button>
-                </motion.div>
-              </div>
-            </motion.div>
-
-            {/* Right Column - Reservation Form or Status with enhanced animations */}
+          <div className={`grid grid-cols-1 ${!reservation ? 'lg:grid-cols-3' : ''} gap-2 sm:gap-6 lg:gap-8`}>
+            {/* Form Content */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="lg:col-span-2"
+              className={`${!reservation ? 'lg:col-span-2 order-1 lg:order-2' : 'max-w-3xl mx-auto w-full'}`}
             >
-              {reservation ? (
-                <motion.div
-                  className="bg-[#1a1a1a] border border-gray-800 p-8 relative overflow-hidden rounded-xl"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ type: "spring", stiffness: 100 }}
-                >
-                  {/* Background animation */}
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent"
-                    animate={{
-                      opacity: [0.05, 0.1, 0.05],
-                      scale: [1, 1.05, 1],
-                    }}
-                    transition={{
-                      repeat: Number.POSITIVE_INFINITY,
-                      duration: 5,
-                      ease: "easeInOut",
-                    }}
-                  ></motion.div>
-
-                  <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: "spring", stiffness: 100 }}
-                    className="flex items-center justify-center mb-8"
-                  >
-                    <div className="relative">
-                      <motion.div
-                        className="absolute rounded-full border-2 border-amber-500/10"
-                        initial={{ width: 80, height: 80, opacity: 0 }}
-                        animate={{ width: 200, height: 200, opacity: 0.2 }}
-                        transition={{ repeat: Number.POSITIVE_INFINITY, duration: 3, ease: "easeOut" }}
-                        style={{ x: "-50%", y: "-50%", left: "50%", top: "50%" }}
-                      />
-                      <motion.div
-                        className="absolute rounded-full border-2 border-amber-500/10"
-                        initial={{ width: 80, height: 80, opacity: 0 }}
-                        animate={{ width: 140, height: 140, opacity: 0.15 }}
-                        transition={{ repeat: Number.POSITIVE_INFINITY, duration: 3, ease: "easeOut", delay: 0.5 }}
-                        style={{ x: "-50%", y: "-50%", left: "50%", top: "50%" }}
-                      />
-                      <motion.div
-                        className="relative z-10 bg-amber-500 rounded-full p-5"
-                        animate={{
-                          boxShadow: [
-                            "0 0 0 rgba(245,158,11,0.3)",
-                            "0 0 20px rgba(245,158,11,0.5)",
-                            "0 0 0 rgba(245,158,11,0.3)",
-                          ],
-                        }}
-                        transition={{
-                          repeat: Number.POSITIVE_INFINITY,
-                          duration: 2,
-                          ease: "easeInOut",
-                        }}
-                      >
-                        <Check className="h-12 w-12 text-black" />
-                      </motion.div>
-                    </div>
-                  </motion.div>
-
-                  <motion.h2
-                    className="text-2xl font-bold text-center mb-6"
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.3, duration: 0.5 }}
-                  >
-                    Reservation Received
-                  </motion.h2>
-
-                  <motion.div
-                    className={`p-4 mb-6 ${getStatusColor(reservation.status)} border rounded-lg relative overflow-hidden`}
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.4, duration: 0.5 }}
-                  >
-                    {/* Animated highlight effect */}
-                    <motion.div
-                      className="absolute inset-0 bg-white/5"
-                      animate={{
-                        x: ["-100%", "100%"],
-                      }}
-                      transition={{
-                        repeat: Number.POSITIVE_INFINITY,
-                        duration: 3,
-                        ease: "easeInOut",
-                      }}
-                    ></motion.div>
-
-                    <div className="flex items-center justify-between mb-2 relative">
-                      <span className="font-medium">Order Number</span>
-                      <span className="font-mono font-bold">{reservation.order_number}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between mb-2 relative">
-                      <span className="font-medium">Status</span>
-                      <span className="capitalize font-bold">{reservation.status}</span>
-                    </div>
-
-                    <p className="text-sm relative">
-                      {reservation.status === "pending"
-                        ? "Your reservation is being reviewed. We'll confirm shortly."
-                        : reservation.status === "confirmed"
-                          ? "Your reservation has been confirmed. We look forward to seeing you!"
-                          : "Unfortunately, your reservation could not be accommodated. Please contact us for details."}
-                    </p>
-                  </motion.div>
-
-                  <motion.div
-                    className="space-y-6 mb-8"
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.5, duration: 0.5 }}
-                  >
-                    <p className="text-gray-300">
-                      Thank you for your reservation request. For faster response, you can contact us directly via
-                      WhatsApp or check your reservation status in your profile.
-                    </p>
-
-                    <div className="bg-[#121212] border border-gray-800 p-6 relative overflow-hidden rounded-lg">
-                      {/* Subtle animated gradient */}
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-transparent"
-                        animate={{
-                          x: ["-100%", "100%"],
-                        }}
-                        transition={{
-                          repeat: Number.POSITIVE_INFINITY,
-                          duration: 8,
-                          ease: "linear",
-                        }}
-                      ></motion.div>
-
-                      <h3 className="text-lg font-medium mb-4 relative">What's Next?</h3>
-                      <div className="space-y-4 relative">
-                        {[1, 2, 3].map((step, index) => (
-                          <motion.div
-                            key={step}
-                            className="flex gap-4 items-start"
-                            initial={{ x: -20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.6 + index * 0.1, duration: 0.5 }}
-                          >
-                            <motion.div
-                              className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0"
-                              whileHover={{ scale: 1.1, backgroundColor: "rgba(245,158,11,0.2)" }}
-                            >
-                              <span className="text-sm font-medium text-amber-400">{step}</span>
-                            </motion.div>
-                            <p className="text-gray-300">
-                              {step === 1
-                                ? "You'll receive a confirmation email once your reservation is confirmed"
-                                : step === 2
-                                  ? "You can modify or cancel your reservation up to 2 hours before the scheduled time"
-                                  : "Please arrive on time. We'll hold your table for 15 minutes after your reservation time"}
-                            </p>
-                          </motion.div>
-                        ))}
+              <div className="bg-[#1a1a1a] border border-gray-800 rounded-lg sm:rounded-xl overflow-hidden">
+                {/* Progress Steps */}
+                <div className="p-2 sm:p-4 md:p-6 border-b border-gray-800">
+                  <div className="flex justify-between items-center">
+                    {[
+                      { step: 1, icon: Calendar, label: "Date & Time" },
+                      { step: 2, icon: Users, label: "Party Size" },
+                      { step: 3, icon: MessageSquare, label: "Details" },
+                    ].map(({ step, icon: Icon, label }) => (
+                      <div key={step} className="flex flex-col items-center relative">
+                        <motion.div
+                          className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full flex items-center justify-center z-10 ${
+                            currentStep >= step ? "bg-amber-500 text-black" : "bg-gray-800 text-gray-400"
+                          }`}
+                          whileHover={{ scale: 1.1 }}
+                        >
+                          <Icon className="h-3 w-3 sm:h-5 sm:w-5" />
+                        </motion.div>
+                        <span className="mt-1 sm:mt-2 text-[10px] sm:text-sm font-medium text-center">
+                          {step === 1 ? t("reservation.steps.date_time") :
+                           step === 2 ? t("reservation.steps.party_size") :
+                           t("reservation.steps.details")}
+                        </span>
                       </div>
-                    </div>
-                  </motion.div>
-
-                  <motion.div
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.8, duration: 0.5 }}
-                  >
-                    <Button
-                      variant="outline"
-                      className="w-full flex items-center justify-center gap-2 bg-amber-500 text-black hover:bg-amber-400 rounded-lg h-12 relative overflow-hidden group"
-                      onClick={() => window.open(`https://wa.me/${whatsappNumberToUse}`, "_blank")}
-                    >
-                      <Phone className="w-4 h-4" />
-                      <span>Chat on WhatsApp</span>
-                      <motion.div
-                        className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100"
-                        initial={{ x: "-100%" }}
-                        whileHover={{ x: "0%" }}
-                        transition={{ duration: 1 }}
-                      />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full flex items-center justify-center gap-2 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 rounded-lg h-12 relative overflow-hidden group"
-                      onClick={() => {
-                        window.location.href = "/settings/profile"
-                      }}
-                    >
-                      <Clock className="w-4 h-4" />
-                      <span>View Reservation Status</span>
-                      <motion.div
-                        className="absolute inset-0 bg-amber-500/10 opacity-0 group-hover:opacity-100"
-                        initial={{ x: "-100%" }}
-                        whileHover={{ x: "100%" }}
-                        transition={{ duration: 1 }}
-                      />
-                    </Button>
-                  </motion.div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  className="bg-[#1a1a1a] border border-gray-800 relative overflow-hidden rounded-xl"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ type: "spring", stiffness: 100 }}
-                >
-                  {/* Animated background effect */}
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent"
-                    animate={{
-                      opacity: animateBackground ? [0.05, 0.15, 0.05] : 0.05,
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      ease: "easeInOut",
-                    }}
-                  ></motion.div>
-
-                  {/* Progress Steps with enhanced animations */}
-                  <div className="p-6 border-b border-gray-800 relative">
-                    <div className="relative">
-                      <motion.div
-                        className="absolute top-1/2 left-0 h-0.5 bg-gray-800 -translate-y-1/2"
-                        style={{ width: "100%" }}
-                      ></motion.div>
-
-                      <motion.div
-                        className="absolute top-1/2 left-0 h-0.5 bg-amber-500 -translate-y-1/2"
-                        initial={{ width: "0%" }}
-                        animate={{ width: `${(currentStep - 1) * 50}%` }}
-                        transition={{ duration: 0.5, ease: "easeInOut" }}
-                      ></motion.div>
-
-                      <div className="relative flex justify-between">
-                        {[
-                          { step: 1, icon: Calendar, label: "Date & Time" },
-                          { step: 2, icon: Users, label: "Party Size" },
-                          { step: 3, icon: MessageSquare, label: "Details" },
-                        ].map(({ step, icon: Icon, label }) => (
-                          <div key={step} className="flex flex-col items-center">
-                            <motion.div
-                              className={`w-10 h-10 rounded-full flex items-center justify-center z-10 ${
-                                currentStep >= step ? "bg-amber-500 text-black" : "bg-gray-800 text-gray-400"
-                              }`}
-                              whileHover={{ scale: 1.1 }}
-                              animate={{
-                                boxShadow:
-                                  currentStep === step
-                                    ? [
-                                        "0 0 0 rgba(245,158,11,0.3)",
-                                        "0 0 10px rgba(245,158,11,0.5)",
-                                        "0 0 0 rgba(245,158,11,0.3)",
-                                      ]
-                                    : "none",
-                              }}
-                              transition={{
-                                repeat: currentStep === step ? Number.POSITIVE_INFINITY : 0,
-                                duration: 2,
-                              }}
-                            >
-                              <Icon className="h-5 w-5" />
-                            </motion.div>
-                            <motion.span
-                              className="mt-2 text-sm font-medium"
-                              animate={{
-                                color: currentStep === step ? "#F59E0B" : "#9ca3af",
-                              }}
-                            >
-                              {label}
-                            </motion.span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    ))}
                   </div>
+                </div>
 
-                  {/* Form Steps with enhanced animations */}
-                  <div className="p-8 relative">
-                    <AnimatePresence mode="wait">
-                      {/* Step 1: Date & Time */}
-                      {currentStep === 1 && (
-                        <motion.div
-                          key="step1"
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -20 }}
-                          transition={{ duration: 0.8 }}
-                          className="space-y-6"
-                        >
-                          <motion.h2
-                            className="text-2xl font-bold mb-6 flex items-center"
-                            initial={{ y: -10, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.1, duration: 0.4 }}
-                          >
-                            <motion.div
-                              animate={{
-                                rotate: [0, 5, 0, -5, 0],
-                              }}
-                              transition={{
-                                repeat: Number.POSITIVE_INFINITY,
-                                duration: 8,
-                                ease: "easeInOut",
-                                repeatDelay: 1,
-                              }}
-                              className="mr-2 text-amber-400"
-                            >
-                              <CalendarDays className="h-6 w-6" />
-                            </motion.div>
-                            Select Date & Time
-                          </motion.h2>
-
-                          <div className="space-y-4">
-                            <motion.div
-                              initial={{ y: 10, opacity: 0 }}
-                              animate={{ y: 0, opacity: 1 }}
-                              transition={{ delay: 0.3, duration: 0.8 }}
-                            >
-                              <Label htmlFor="tanggal" className="text-base mb-2 block">
-                                Date
-                              </Label>
-                              <div className="relative">
-                                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-amber-400 h-5 w-5" />
-                                <Input
-                                  id="tanggal"
-                                  type="date"
-                                  value={data.tanggal}
-                                  onChange={(e) => setData("tanggal", e.target.value)}
-                                  min={new Date().toISOString().split("T")[0]}
-                                  required
-                                  className="bg-[#121212] border-gray-800 text-white pl-10 h-12 rounded-lg focus:border-amber-500 focus:ring-amber-500/20"
-                                />
-                              </div>
-                              <InputError message={errors.tanggal} />
-                            </motion.div>
-
-                            {data.tanggal && (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                transition={{ duration: 0.4 }}
-                                className="pt-4"
-                              >
-                                <p className="text-lg font-medium mb-4">
-                                  Available time slots for {formatDate(data.tanggal)}:
-                                </p>
-
-                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                                  {timeSlots.map((time, index) => (
-                                    <motion.button
-                                      key={time}
-                                      type="button"
-                                      className={`p-3 border ${
-                                        selectedTimeSlot === time
-                                          ? "border-amber-500 bg-amber-500 text-black"
-                                          : "border-gray-800 hover:border-amber-500/50 hover:bg-amber-500/10"
-                                      } text-center transition-colors relative overflow-hidden rounded-lg`}
-                                      onClick={() => handleTimeSlotSelect(time)}
-                                      whileHover={{ scale: 1.05 }}
-                                      whileTap={{ scale: 0.95 }}
-                                      initial={{ opacity: 0, y: 10 }}
-                                      animate={{ opacity: 1, y: 0 }}
-                                      transition={{ delay: 0.2 + index * 0.05, duration: 0.6 }}
-                                    >
-                                      {selectedTimeSlot === time && (
-                                        <motion.div
-                                          className="absolute inset-0 bg-amber-500"
-                                          layoutId="selectedTime"
-                                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                                        />
-                                      )}
-                                      <span
-                                        className={`relative z-10 ${selectedTimeSlot === time ? "text-black" : ""}`}
-                                      >
-                                        {time}
-                                      </span>
-                                    </motion.button>
-                                  ))}
-                                </div>
-                              </motion.div>
-                            )}
-                          </div>
-
-                          {/* Step 1 Navigation */}
-                          <div className="flex justify-end mt-8">
-                            <motion.div
-                              initial={{ opacity: 0, x: 10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.5, duration: 0.6 }}
-                            >
-                              <Button
-                                type="button"
-                                onClick={handleStepNavigation}
-                                className="bg-amber-500 text-black hover:bg-amber-400 rounded-lg h-12 px-6 relative overflow-hidden group"
-                                disabled={!data.tanggal || !data.waktu}
-                              >
-                                <span className="flex items-center relative z-10">
-                                  Continue
-                                  <ChevronRight className="ml-2 h-4 w-4" />
-                                </span>
-                                <motion.div
-                                  className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100"
-                                  initial={{ x: "-100%" }}
-                                  whileHover={{ x: "0%" }}
-                                  transition={{ duration: 0.6 }}
-                                />
-                              </Button>
-                            </motion.div>
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {/* Step 2: Party Size */}
-                      {currentStep === 2 && (
-                        <motion.div
-                          key="step2"
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -20 }}
-                          transition={{ duration: 0.8 }}
-                          className="space-y-6"
-                        >
-                          <motion.h2
-                            className="text-2xl font-bold mb-6 flex items-center"
-                            initial={{ y: -10, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.1, duration: 0.4 }}
-                          >
-                            <motion.div
-                              animate={{
-                                scale: [1, 1.1, 1],
-                              }}
-                              transition={{
-                                repeat: Number.POSITIVE_INFINITY,
-                                duration: 2,
-                                ease: "easeInOut",
-                              }}
-                              className="mr-2 text-amber-400"
-                            >
-                              <Users className="h-6 w-6" />
-                            </motion.div>
-                            How many people?
-                          </motion.h2>
-
-                          <div className="space-y-4">
-                            <motion.div
-                              className="flex items-center justify-center"
-                              initial={{ scale: 0.9, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              transition={{ delay: 0.2, type: "spring", stiffness: 300, damping: 25 }}
-                            >
-                              <motion.div
-                                className="flex items-center gap-6"
-                                initial={{ scale: 0.9 }}
-                                animate={{ scale: 1 }}
-                                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                              >
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  className="h-12 w-12 rounded-full border-gray-700 text-white hover:bg-amber-500/10 hover:border-amber-500/50"
-                                  onClick={() => setData("jumlah_orang", Math.max(1, (data.jumlah_orang || 1) - 1))}
-                                  disabled={data.jumlah_orang <= 1}
-                                >
-                                  -
-                                </Button>
-                                <motion.div
-                                  className="text-4xl font-bold w-16 text-center text-amber-400"
-                                  key={data.jumlah_orang}
-                                  initial={{ scale: 0.8, opacity: 0.5 }}
-                                  animate={{ scale: 1, opacity: 1 }}
-                                  transition={{ type: "spring", stiffness: 300 }}
-                                >
-                                  {data.jumlah_orang}
-                                </motion.div>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  className="h-12 w-12 rounded-full border-gray-700 text-white hover:bg-amber-500/10 hover:border-amber-500/50"
-                                  onClick={() => setData("jumlah_orang", Math.min(20, (data.jumlah_orang || 1) + 1))}
-                                  disabled={data.jumlah_orang >= 20}
-                                >
-                                  +
-                                </Button>
-                              </motion.div>
-                            </motion.div>
-                            <InputError message={errors.jumlah_orang} />
-
-                            <motion.div
-                              className="pt-6"
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ delay: 0.4, duration: 0.4 }}
-                            >
-                              <p className="text-gray-400 text-center">
-                                {data.jumlah_orang > 8
-                                  ? "For parties larger than 8, a 10% service charge will be applied."
-                                  : "No additional service charge for parties of 8 or fewer."}
-                              </p>
-                            </motion.div>
-                          </div>
-
-                          {/* Step 2 Navigation */}
-                          <div className="flex justify-between mt-8">
-                            <motion.div
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.5, duration: 0.6 }}
-                            >
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={prevStep}
-                                className="border-gray-700 text-white hover:bg-amber-500/10 hover:border-amber-500/50 rounded-lg h-12 px-6 relative overflow-hidden group"
-                              >
-                                <span className="flex items-center relative z-10">
-                                  <ChevronLeft className="mr-2 h-4 w-4" />
-                                  Back
-                                </span>
-                                <motion.div
-                                  className="absolute inset-0 bg-amber-500/10 opacity-0 group-hover:opacity-100"
-                                  initial={{ x: "100%" }}
-                                  whileHover={{ x: "0%" }}
-                                  transition={{ duration: 0.6 }}
-                                />
-                              </Button>
-                            </motion.div>
-                            <motion.div
-                              initial={{ opacity: 0, x: 10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.5, duration: 0.6 }}
-                            >
-                              <Button
-                                type="button"
-                                onClick={handleStepNavigation}
-                                className="bg-amber-500 text-black hover:bg-amber-400 rounded-lg h-12 px-6 relative overflow-hidden group"
-                                disabled={!data.jumlah_orang}
-                              >
-                                <span className="flex items-center relative z-10">
-                                  Continue
-                                  <ChevronRight className="ml-2 h-4 w-4" />
-                                </span>
-                                <motion.div
-                                  className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100"
-                                  initial={{ x: "-100%" }}
-                                  whileHover={{ x: "0%" }}
-                                  transition={{ duration: 0.6 }}
-                                />
-                              </Button>
-                            </motion.div>
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {/* Step 3: Special Requests */}
-                      {currentStep === 3 && (
-                        <motion.div
-                          key="step3"
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -20 }}
-                          transition={{ duration: 0.8 }}
-                          className="space-y-6"
-                        >
-                          <motion.h2
-                            className="text-2xl font-bold mb-6 flex items-center"
-                            initial={{ y: -10, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.1, duration: 0.4 }}
-                          >
-                            <motion.div
-                              animate={{
-                                rotate: [0, 10, 0, -10, 0],
-                              }}
-                              transition={{
-                                repeat: Number.POSITIVE_INFINITY,
-                                duration: 8,
-                                ease: "easeInOut",
-                              }}
-                              className="mr-2 text-amber-400"
-                            >
-                              <MessageSquare className="h-6 w-6" />
-                            </motion.div>
-                            Any special requests?
-                          </motion.h2>
-
-                          <motion.div
-                            className="space-y-4"
-                            initial={{ y: 10, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.3, duration: 0.8 }}
-                          >
-                            <Label htmlFor="note" className="text-base mb-2 block">
-                              Special Requests (Optional)
-                            </Label>
+                {/* Form Steps */}
+                <div className="p-3 sm:p-6 lg:p-8">
+                  <AnimatePresence mode="wait">
+                    {currentStep === 1 && (
+                      <motion.div
+                        key="step1"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="space-y-4 sm:space-y-6"
+                      >
+                        <div className="space-y-3 sm:space-y-4">
+                          <Label htmlFor="tanggal" className="text-xs sm:text-base block font-medium text-amber-400/90">
+                            {t("reservation.date")}
+                          </Label>
+                          <div className="relative group">
+                            <Calendar className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-amber-400 h-3 sm:h-5 w-3 sm:w-5 transition-transform duration-200 group-hover:scale-110" />
                             <Input
-                              id="note"
-                              value={data.note}
-                              onChange={(e) => setData("note", e.target.value)}
-                              placeholder="Let us know if you have any special requests or dietary requirements..."
-                              className="bg-[#121212] border-gray-800 text-white rounded-lg focus:border-amber-500 focus:ring-amber-500/20 min-h-[120px] py-2 px-3"
+                              id="tanggal"
+                              type="date"
+                              value={data.tanggal}
+                              onChange={(e) => setData("tanggal", e.target.value)}
+                              min={new Date().toISOString().split("T")[0]}
+                              required
+                              className="bg-[#2a2a2a] border border-amber-500/50 text-white pl-8 sm:pl-10 h-9 sm:h-12 text-xs sm:text-base rounded-lg focus:border-amber-500 focus:ring-amber-500/20 cursor-pointer hover:border-amber-500 hover:bg-[#333333] transition-all duration-200 shadow-sm hover:shadow-md [&::-webkit-calendar-picker-indicator]:bg-amber-500 [&::-webkit-calendar-picker-indicator]:p-1 [&::-webkit-calendar-picker-indicator]:rounded [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:hover:bg-amber-400 [&::-webkit-calendar-picker-indicator]:transition-colors [&::-webkit-calendar-picker-indicator]:duration-200"
                             />
-                            <InputError message={errors.note} />
-                          </motion.div>
+                            <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-amber-500/0 via-amber-500/0 to-amber-500/0 group-hover:from-amber-500/5 group-hover:via-amber-500/10 group-hover:to-amber-500/5 transition-all duration-300 pointer-events-none" />
+                          </div>
+                        </div>
 
+                        {data.tanggal && (
                           <motion.div
-                            className="bg-[#121212] border border-gray-800 p-6 mt-6 relative overflow-hidden rounded-lg"
-                            initial={{ y: 10, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.3, duration: 0.4 }}
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-3 sm:space-y-4"
                           >
-                            {/* Animated highlight effect */}
-                            <motion.div
-                              className="absolute inset-0 bg-amber-500/5"
-                              animate={{
-                                x: ["-100%", "100%"],
-                              }}
-                              transition={{
-                                repeat: Number.POSITIVE_INFINITY,
-                                duration: 3,
-                                ease: "easeInOut",
-                              }}
-                            ></motion.div>
+                            <p className="text-sm sm:text-lg font-medium">
+                              {t("reservation.time_slots_for")} {formatDateForDisplay(data.tanggal)}:
+                            </p>
 
-                            <h3 className="font-medium mb-4 relative">Reservation Summary</h3>
-                            <div className="space-y-3 text-gray-400 relative">
-                              <div className="flex justify-between">
-                                <span>Date:</span>
-                                <span className="text-amber-400">{formatDate(data.tanggal)}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span>Time:</span>
-                                <span className="text-amber-400">{data.waktu}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span>Party Size:</span>
-                                <span className="text-amber-400">{data.jumlah_orang} people</span>
-                              </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5 sm:gap-2">
+                              {timeSlots.map((time) => (
+                                <motion.button
+                                  key={time}
+                                  onClick={() => handleTimeSlotSelect(time)}
+                                  className={`p-1.5 sm:p-3 text-[10px] sm:text-sm rounded-lg transition-all ${
+                                    selectedTimeSlot === time
+                                      ? "bg-amber-500 text-black border-amber-500"
+                                      : "border border-gray-800 hover:border-amber-500/50 hover:bg-amber-500/10"
+                                  }`}
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                >
+                                  {time}
+                                </motion.button>
+                              ))}
                             </div>
                           </motion.div>
+                        )}
+                      </motion.div>
+                    )}
 
-                          {/* Step 3 Navigation */}
-                          <div className="flex justify-between mt-8">
-                            <motion.div
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.5, duration: 0.6 }}
+                    {currentStep === 2 && (
+                      <motion.div
+                        key="step2"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="space-y-4 sm:space-y-6"
+                      >
+                        <div className="flex flex-col items-center space-y-4 sm:space-y-6">
+                          <h2 className="text-lg sm:text-2xl font-bold text-center">
+                            {t("reservation.party_size.title")}
+                          </h2>
+                          
+                          <div className="flex items-center justify-center gap-4 sm:gap-8">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setData("jumlah_orang", Math.max(1, (data.jumlah_orang || 1) - 1))}
+                              className="h-8 w-8 sm:h-12 sm:w-12 rounded-full border-gray-700 text-base sm:text-xl"
+                              disabled={data.jumlah_orang <= 1}
                             >
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={prevStep}
-                                className="border-gray-700 text-white hover:bg-amber-500/10 hover:border-amber-500/50 rounded-lg h-12 px-6 relative overflow-hidden group"
-                              >
-                                <span className="flex items-center relative z-10">
-                                  <ChevronLeft className="mr-2 h-4 w-4" />
-                                  Back
-                                </span>
-                                <motion.div
-                                  className="absolute inset-0 bg-amber-500/10 opacity-0 group-hover:opacity-100"
-                                  initial={{ x: "100%" }}
-                                  whileHover={{ x: "0%" }}
-                                  transition={{ duration: 0.6 }}
-                                />
-                              </Button>
-                            </motion.div>
-                            <motion.div
-                              initial={{ opacity: 0, x: 10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.5, duration: 0.6 }}
+                              -
+                            </Button>
+                            <span className="text-2xl sm:text-4xl font-bold text-amber-400 min-w-[2ch] sm:min-w-[3ch] text-center">
+                              {data.jumlah_orang}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setData("jumlah_orang", Math.min(20, (data.jumlah_orang || 1) + 1))}
+                              className="h-8 w-8 sm:h-12 sm:w-12 rounded-full border-gray-700 text-base sm:text-xl"
+                              disabled={data.jumlah_orang >= 20}
                             >
-                              <Button
-                                type="button"
-                                onClick={handleFinalSubmit}
-                                className="bg-amber-500 text-black hover:bg-amber-400 rounded-lg h-12 px-8 relative overflow-hidden"
-                                disabled={!data.tanggal || !data.waktu || !data.jumlah_orang || processing}
-                              >
-                                <span className="flex items-center relative z-10">
-                                  {processing ? (
-                                    <>
-                                      <motion.div
-                                        animate={{ rotate: 360 }}
-                                        transition={{ repeat: Number.POSITIVE_INFINITY, duration: 1, ease: "linear" }}
-                                        className="mr-2"
-                                      >
-                                        <Clock className="h-4 w-4" />
-                                      </motion.div>
-                                      Processing...
-                                    </>
-                                  ) : (
-                                    <>
-                                      Complete Reservation
-                                      <ArrowRight className="ml-2 h-4 w-4" />
-                                    </>
-                                  )}
-                                </span>
-                                <motion.span
-                                  className="absolute inset-0 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400"
-                                  initial={{ x: "-100%" }}
-                                  animate={{ x: "100%" }}
-                                  transition={{
-                                    repeat: Number.POSITIVE_INFINITY,
-                                    duration: 2,
-                                    ease: "linear",
-                                  }}
-                                  style={{ opacity: 0.3 }}
-                                />
-                              </Button>
-                            </motion.div>
+                              +
+                            </Button>
                           </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+
+                          <p className="text-xs sm:text-base text-gray-400 text-center max-w-md">
+                            {data.jumlah_orang > 8
+                              ? t("reservation.party_size.large_party")
+                              : t("reservation.party_size.no_charge")}
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {currentStep === 3 && (
+                      <motion.div
+                        key="step3"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="space-y-4 sm:space-y-6"
+                      >
+                        <div className="space-y-3 sm:space-y-4">
+                          <Label htmlFor="note" className="text-xs sm:text-base block font-medium">
+                            {t("reservation.special_requests")}
+                          </Label>
+                          <Input
+                            id="note"
+                            value={data.note}
+                            onChange={(e) => setData("note", e.target.value)}
+                            placeholder={t("reservation.special_requests.placeholder")}
+                            className="bg-[#121212] border-gray-800 text-xs sm:text-base text-white rounded-lg focus:border-amber-500 focus:ring-amber-500/20 min-h-[80px] sm:min-h-[120px] py-2 px-3"
+                          />
+                        </div>
+
+                        <div className="bg-[#121212] border border-gray-800 p-3 sm:p-6 rounded-lg space-y-2 sm:space-y-3">
+                          <h3 className="text-xs sm:text-base font-medium">{t("reservation.summary.title")}</h3>
+                          <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-base text-gray-400">
+                            <div className="flex justify-between">
+                              <span>{t("reservation.summary.date")}</span>
+                              <span className="text-amber-400">{formatDateForDisplay(data.tanggal)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>{t("reservation.summary.time")}</span>
+                              <span className="text-amber-400">{data.waktu}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>{t("reservation.summary.party_size")}</span>
+                              <span className="text-amber-400">
+                                {data.jumlah_orang} {t("reservation.summary.people")}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Navigation Buttons */}
+                  <div className="flex flex-col-reverse sm:flex-row justify-between gap-2 sm:gap-4 mt-4 sm:mt-8">
+                    {currentStep > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={prevStep}
+                        className="w-full sm:w-auto border-gray-700 text-white hover:bg-amber-500/10 hover:border-amber-500/50 rounded-lg h-9 sm:h-12 px-3 sm:px-6 text-xs sm:text-base"
+                      >
+                        <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                        <span className="hidden sm:inline">{t("reservation.buttons.back")}</span>
+                        <span className="sm:hidden">Back</span>
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      onClick={currentStep === 3 ? handleFinalSubmit : handleStepNavigation}
+                      disabled={
+                        (currentStep === 1 && (!data.tanggal || !data.waktu)) ||
+                        (currentStep === 2 && !data.jumlah_orang) ||
+                        processing
+                      }
+                      className="w-full sm:w-auto bg-amber-500 text-black hover:bg-amber-400 rounded-lg h-9 sm:h-12 px-3 sm:px-6 text-xs sm:text-base"
+                    >
+                      <span className="flex items-center justify-center">
+                        {processing ? (
+                          <>
+                            <Clock className="animate-spin h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                            <span>{t("reservation.buttons.processing")}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>
+                              {currentStep === 3
+                                ? t("reservation.buttons.complete")
+                                : t("reservation.buttons.continue")}
+                            </span>
+                            <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1.5 sm:ml-2" />
+                          </>
+                        )}
+                      </span>
+                    </Button>
                   </div>
-                </motion.div>
-              )}
+                </div>
+              </div>
             </motion.div>
+
+            {/* Opening Hours Column */}
+            {!reservation && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="lg:col-span-1 order-2 lg:order-1"
+              >
+                <div className="bg-[#1a1a1a] border border-gray-800 p-3 sm:p-6 rounded-lg sm:rounded-xl sticky top-16 sm:top-24 overflow-hidden relative">
+                  <h2 className="text-base sm:text-xl font-bold mb-3 sm:mb-6 flex items-center relative">
+                    <Clock className="w-3 h-3 sm:w-5 sm:h-5 text-amber-400 mr-1.5 sm:mr-2" />
+                    {t("reservation.opening_hours")}
+                  </h2>
+
+                  <div className="space-y-1.5 sm:space-y-3 relative">
+                    {Object.entries(actualOpeningHours).map(([day, hours], index) => (
+                      <motion.div
+                        key={day}
+                        className={`flex justify-between p-2 sm:p-3 rounded-lg text-xs sm:text-base ${
+                          selectedDay === day
+                            ? "border-amber-500/50 bg-amber-500/10"
+                            : hoveredDay === day
+                              ? "border-gray-700 bg-[#1f1f1f]"
+                              : "border-gray-800 bg-[#1a1a1a]"
+                        } transition-colors duration-200`}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 * index, duration: 0.3 }}
+                        onMouseEnter={() => setHoveredDay(day)}
+                        onMouseLeave={() => setHoveredDay(null)}
+                        whileHover={{ scale: 1.02, boxShadow: "0 0 10px rgba(245,158,11,0.1)" }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <span className="font-medium">{getTranslatedDay(day)}</span>
+                        <span className="text-amber-400">
+                          {hours[0]} - {hours[1]}
+                        </span>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  <motion.div
+                    className="mt-4 sm:mt-8 pt-3 sm:pt-6 border-t border-gray-800 relative"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.8, duration: 0.5 }}
+                  >
+                    {whatsappNumber && (
+                      <>
+                        <h3 className="text-sm sm:text-lg font-medium mb-2 sm:mb-4 flex items-center">
+                          <Info className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-amber-400" />
+                          {t("reservation.need_assistance")}
+                        </h3>
+                        <Button
+                          variant="outline"
+                          className="w-full flex items-center justify-center gap-1.5 sm:gap-2 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 group relative overflow-hidden rounded-lg h-9 sm:h-12 text-xs sm:text-base"
+                          onClick={openWhatsApp}
+                        >
+                          <Phone className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span>{t("reservation.contact_whatsapp")}</span>
+                        </Button>
+                      </>
+                    )}
+                  </motion.div>
+                </div>
+              </motion.div>
+            )}
           </div>
         </div>
       </main>

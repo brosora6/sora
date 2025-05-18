@@ -42,8 +42,11 @@ class ReservationResource extends Resource
                 Forms\Components\TimePicker::make('waktu')
                     ->required()
                     ->native(false)
+                    ->format('H:i')
                     ->hoursStep(1)
-                    ->minutesStep(30),
+                    ->minutesStep(30)
+                    ->displayFormat('H:i')
+                    ->label('Waktu'),
                 Forms\Components\TextInput::make('jumlah_orang')
                     ->required()
                     ->numeric()
@@ -59,6 +62,9 @@ class ReservationResource extends Resource
                     ->required()
                     ->default('pending')
                     ->native(false),
+                Forms\Components\Textarea::make('note')
+                    ->label('Note')
+                    ->rows(3),
             ]);
     }
 
@@ -79,8 +85,18 @@ class ReservationResource extends Resource
                     ->date()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('waktu')
-                    ->time()
-                    ->sortable(),
+                    ->formatStateUsing(function ($state) {
+                        $hour = (int) date('H', strtotime($state));
+                        $period = match(true) {
+                            $hour >= 3 && $hour < 10 => 'Pagi',
+                            $hour >= 10 && $hour < 15 => 'Siang',
+                            $hour >= 15 && $hour < 18 => 'Sore',
+                            default => 'Malam'
+                        };
+                        return date('H:i', strtotime($state)) . ' ' . $period;
+                    })
+                    ->sortable()
+                    ->label('Waktu'),
                 Tables\Columns\TextColumn::make('jumlah_orang')
                     ->numeric()
                     ->sortable()
@@ -92,8 +108,8 @@ class ReservationResource extends Resource
                         'rejected' => 'Rejected',
                     ])
                     ->sortable(),
-                Tables\Columns\TextColumn::make('staff_whatsapp')
-                    ->label('Staff WhatsApp')
+                Tables\Columns\TextColumn::make('note')
+                    ->label('Note')
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -110,12 +126,6 @@ class ReservationResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('whatsapp')
-                    ->icon('heroicon-o-phone')
-                    ->color('success')
-                    ->url(fn (Reservation $record): string => "https://wa.me/{$record->staff_whatsapp}")
-                    ->openUrlInNewTab()
-                    ->visible(fn (Reservation $record): bool => $record->staff_whatsapp !== null),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

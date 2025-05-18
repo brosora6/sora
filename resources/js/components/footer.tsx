@@ -1,112 +1,187 @@
-import React from 'react';
-import { Utensils } from 'lucide-react';
+"use client"
+
+import type React from "react"
+
+import { useState } from "react"
+import { Utensils, Instagram, Facebook, Twitter } from "lucide-react"
+import { motion } from "framer-motion"
+import { useTranslation } from "@/contexts/TranslationContext"
 
 const Footer = () => {
-  const currentYear = new Date().getFullYear();
-  
+  const { t } = useTranslation()
+  const currentYear = new Date().getFullYear()
+  const [email, setEmail] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
+
+  const route = (routeName: string, params: object = {}) => {
+    // Map route names to their actual paths
+    const routes: { [key: string]: string } = {
+      "customer.login": "/customer/login",
+      "customer.register": "/customer/register",
+      menu: "/menu",
+      Reservation: "/reservations/create",
+      home: "/",
+      about: "/about",
+    }
+
+    // Get the base path
+    const path = routes[routeName] || `/${routeName}`
+
+    // Add query parameters if any
+    if (Object.keys(params).length > 0) {
+      const queryParams = new URLSearchParams(params as Record<string, string>)
+      return `${path}?${queryParams.toString()}`
+    }
+
+    return path
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+
+    // Simulate API call
+    setTimeout(() => {
+      setIsSubmitting(false)
+      setIsSubmitted(true)
+      setEmail("")
+
+      // Reset success message after 3 seconds
+      setTimeout(() => {
+        setIsSubmitted(false)
+      }, 3000)
+    }, 1000)
+  }
+
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  }
+
+  const navigationItems = [
+    { key: "footer.nav.home", href: route("home") },
+    { key: "footer.nav.about", href: route("about") },
+    { key: "footer.nav.menu", href: route("menu") },
+    { key: "footer.nav.reservations", href: route("Reservation") },
+  ]
+
+  const policyItems = [
+    { key: "footer.privacy", href: route("privacy") },
+    { key: "footer.terms", href: route("terms") },
+    { key: "footer.cookies", href: route("cookies") },
+  ]
+
   return (
-    <footer className="bg-[#0a0a0a] text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className="bg-[#0a0a0a] text-white relative overflow-hidden">
+      {/* Subtle background pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#ffffff_1px,transparent_1px)] bg-[length:20px_20px]"></div>
+      </div>
+
+      {/* Accent gradient */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400"></div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Main Footer Content */}
-        <div className="py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="py-20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
           {/* Brand Column */}
-          <div className="space-y-6">
-            <div className="flex items-center">
-              <div className="w-12 h-12 mr-3 flex items-center justify-center bg-amber-500/10 rounded-full">
-                <Utensils className="w-6 h-6 text-amber-400" />
+          <div className="lg:col-span-4 space-y-6">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              variants={fadeInUp}
+              className="flex items-center"
+            >
+              <div className="w-12 h-12 mr-3 flex items-center justify-center bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg shadow-lg">
+                <Utensils className="w-6 h-6 text-black" />
               </div>
-              <span className="text-xl font-bold">RUMAH MAKAN SALWA</span>
-            </div>
-            <p className="text-gray-400 text-sm font-light max-w-xs">
-              Experience authentic Indonesian cuisine in a warm and inviting atmosphere. We bring the rich flavors and traditions of Indonesia to your table.
-            </p>
-            <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-                </svg>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                </svg>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
-                </svg>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
-                  <rect x="2" y="9" width="4" height="12"></rect>
-                  <circle cx="4" cy="4" r="2"></circle>
-                </svg>
-              </a>
-            </div>
-          </div>
-          
-          {/* Navigation Columns */}
-          <div>
-            <h3 className="text-sm font-bold tracking-wider uppercase mb-4">EXPLORE</h3>
-            <ul className="space-y-2">
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Home</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">About Us</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Menu</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Reservations</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Gallery</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Contact</a></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h3 className="text-sm font-bold tracking-wider uppercase mb-4">SERVICES</h3>
-            <ul className="space-y-2">
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Dine-in</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Takeaway</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Catering</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Private Events</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Online Ordering</a></li>
-            </ul>
-          </div>
-          
-          {/* Newsletter Signup */}
-          <div>
-            <h3 className="text-sm font-bold tracking-wider uppercase mb-4">STAY UPDATED</h3>
-            <p className="text-gray-400 text-sm mb-4">Subscribe to our newsletter for special offers and new menu items.</p>
-            <form className="flex flex-col sm:flex-row gap-2">
-              <input 
-                type="email" 
-                placeholder="Your email" 
-                className="bg-[#1a1a1a] border border-gray-800 px-4 py-2 text-sm focus:outline-none focus:border-white transition-colors"
-                required
-              />
-              <button 
-                type="submit" 
-                className="bg-white text-black px-4 py-2 text-sm font-medium hover:bg-gray-200 transition-colors"
-              >
-                SUBSCRIBE
-              </button>
-            </form>
+              <span className="text-xl font-bold tracking-tight">RUMAH MAKAN SALWA</span>
+            </motion.div>
+
+            <motion.p
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              variants={fadeInUp}
+              className="text-gray-400 text-sm leading-relaxed max-w-xs"
+            >
+              {t("footer.description")}
+            </motion.p>
+
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              variants={fadeInUp}
+              className="pt-2"
+            >
+              <div className="flex space-x-4">
+                <a
+                  href="#"
+                  className="w-10 h-10 rounded-full bg-[#111111] hover:bg-amber-500 flex items-center justify-center transition-all duration-300 hover:scale-110 group"
+                  aria-label="Facebook"
+                >
+                  <Facebook className="w-5 h-5 text-gray-400 group-hover:text-black transition-colors" />
+                </a>
+                <a
+                  href="#"
+                  className="w-10 h-10 rounded-full bg-[#111111] hover:bg-amber-500 flex items-center justify-center transition-all duration-300 hover:scale-110 group"
+                  aria-label="Instagram"
+                >
+                  <Instagram className="w-5 h-5 text-gray-400 group-hover:text-black transition-colors" />
+                </a>
+                <a
+                  href="#"
+                  className="w-10 h-10 rounded-full bg-[#111111] hover:bg-amber-500 flex items-center justify-center transition-all duration-300 hover:scale-110 group"
+                  aria-label="Twitter"
+                >
+                  <Twitter className="w-5 h-5 text-gray-400 group-hover:text-black transition-colors" />
+                </a>
+              </div>
+            </motion.div>
           </div>
         </div>
-        
+
         {/* Bottom Bar */}
-        <div className="border-t border-gray-800 py-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-500 text-sm">
-            © {currentYear} Rumah Makan Salwa. All rights reserved.
-          </p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="#" className="text-gray-500 hover:text-white text-xs transition-colors">Privacy Policy</a>
-            <a href="#" className="text-gray-500 hover:text-white text-xs transition-colors">Terms of Service</a>
-            <a href="#" className="text-gray-500 hover:text-white text-xs transition-colors">Cookie Policy</a>
+        <div className="border-t border-gray-800/50 py-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+              className="text-gray-500 text-sm"
+            >
+              © {currentYear} <span className="text-gray-400">Rumah Makan Salwa</span>. {t("footer.rights")}
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.7 }}
+              className="flex space-x-6 mt-4 md:mt-0"
+            >
+              {policyItems.map((item, index) => (
+                <a
+                  key={index}
+                  href={item.href}
+                  className="text-gray-500 hover:text-amber-400 text-xs transition-colors duration-300"
+                >
+                  {t(item.key)}
+                </a>
+              ))}
+            </motion.div>
           </div>
         </div>
       </div>
     </footer>
-  );
-};
+  )
+}
 
-export default Footer;
+export default Footer

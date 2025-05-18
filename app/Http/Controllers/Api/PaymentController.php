@@ -57,6 +57,7 @@ class PaymentController extends Controller
             $request->validate([
                 'payment_proof' => 'required|image|mimes:jpeg,png,jpg|max:2048',
                 'total_amount' => 'required|numeric|min:0',
+                'bank_account_id' => 'required|exists:bank_accounts,id',
             ]);
 
             // Get the authenticated customer's ID
@@ -82,7 +83,8 @@ class PaymentController extends Controller
                 'order_number' => $orderNumber,
                 'total_amount' => $request->total_amount,
                 'payment_proof' => $path,
-                'status' => 'pending'
+                'status' => 'pending',
+                'bank_account_id' => $request->bank_account_id
             ]);
 
             // Associate cart items with the payment

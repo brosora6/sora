@@ -24,4 +24,10 @@ export interface PageProps {
     auth: {
         user: User;
     };
+}
+
+export interface BreadcrumbItem {
+    label: string;
+    href?: string;
+    active?: boolean;
 } 

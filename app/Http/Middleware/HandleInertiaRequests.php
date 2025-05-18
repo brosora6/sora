@@ -6,6 +6,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -35,16 +36,17 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
+        // Start the session if not already started
+        if (!Session::isStarted()) {
+            Session::start();
+        }
 
-        // Ensure session is started and token is generated
-        if (!$request->session()->isStarted()) {
-            $request->session()->start();
+        // Generate CSRF token if not exists
+        if (!Session::has('_token')) {
+            Session::regenerateToken();
         }
-        
-        if (!$request->session()->has('_token')) {
-            $request->session()->regenerateToken();
-        }
+
+        [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
         return array_merge(parent::share($request), [
             'name' => config('app.name'),
@@ -57,8 +59,15 @@ class HandleInertiaRequests extends Middleware
                 'status' => fn () => $request->session()->get('status'),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
-            'csrf_token' => $request->session()->token(),
-            '_token' => $request->session()->token(),
+            // Share CSRF token with all requests
+            'csrf_token' => csrf_token(),
+            '_token' => csrf_token(),
+            // Add ziggy routes if you're using them
+            'ziggy' => [
+                'url' => $request->url(),
+                'port' => $request->getPort(),
+                'defaults' => [],
+            ],
         ]);
     }
 }

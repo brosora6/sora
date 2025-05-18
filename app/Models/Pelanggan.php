@@ -7,6 +7,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use App\Notifications\CustomerResetPasswordNotification;
 
 class Pelanggan extends Authenticatable implements CanResetPasswordContract
 {
@@ -57,5 +58,16 @@ class Pelanggan extends Authenticatable implements CanResetPasswordContract
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new CustomerResetPasswordNotification($token));
     }
 }

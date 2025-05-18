@@ -86,8 +86,7 @@ class MenuResource extends Resource
                 Tables\Columns\TextColumn::make('stok')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\IconColumn::make('is_recommended')
-                    ->boolean()
+                Tables\Columns\ToggleColumn::make('is_recommended')
                     ->sortable()
                     ->label('Recommended'),
                 Tables\Columns\TextColumn::make('total_purchased')

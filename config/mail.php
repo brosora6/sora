@@ -113,4 +113,21 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Email Headers
+    |--------------------------------------------------------------------------
+    |
+    | Here you may configure the headers that should be added to all outgoing
+    | messages. These headers will help improve email deliverability.
+    |
+    */
+    
+    'headers' => [
+        'Auto-Submitted' => 'auto-generated',
+        'X-Auto-Response-Suppress' => 'All',
+        'List-Unsubscribe' => '<' . env('APP_URL') . '/unsubscribe>',
+        'X-Entity-Ref-ID' => 'rumah-makan-salwa',
+    ],
+
 ];

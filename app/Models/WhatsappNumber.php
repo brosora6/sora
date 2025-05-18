@@ -13,19 +13,16 @@ class WhatsappNumber extends Model
         'number',
         'name',
         'description',
-        'is_primary',
         'is_active',
     ];
 
     protected $casts = [
-        'is_primary' => 'boolean',
         'is_active' => 'boolean',
     ];
 
     public static function getPrimaryNumber()
     {
-        $whatsapp = self::where('is_primary', true)
-            ->where('is_active', true)
+        $whatsapp = self::where('is_active', true)
             ->first();
 
         return $whatsapp ? $whatsapp->number : null;

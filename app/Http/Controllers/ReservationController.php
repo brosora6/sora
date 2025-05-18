@@ -29,8 +29,8 @@ class ReservationController extends Controller
             ->latest()
             ->first();
 
-        // Get primary WhatsApp number
-        $whatsappNumber = WhatsappNumber::where('is_primary', true)->first();
+        // Get active WhatsApp number
+        $whatsappNumber = WhatsappNumber::where('is_active', true)->first();
         $whatsappNumberValue = $whatsappNumber ? $whatsappNumber->number : null;
 
         return Inertia::render('Reservation', [
@@ -83,16 +83,44 @@ class ReservationController extends Controller
             'order_number' => 'RES' . now()->format('ymd') . rand(1000, 9999),
         ]);
 
-        return redirect()->route('reservations')->with([
-            'message' => 'Reservation created successfully',
-            'reservation' => $reservation
+        // Get active WhatsApp number
+        $whatsappNumber = WhatsappNumber::where('is_active', true)->first();
+        $whatsappNumberValue = $whatsappNumber ? $whatsappNumber->number : null;
+
+        return redirect()->route('reservation.success', [
+            'order' => $reservation->order_number,
+            'whatsappNumber' => $whatsappNumberValue
+        ]);
+    }
+
+    public function success(Request $request)
+    {
+        $orderNumber = $request->query('order');
+        
+        if (!$orderNumber) {
+            return redirect()->route('reservation.create');
+        }
+
+        $reservation = Reservation::where('order_number', $orderNumber)
+            ->where('pelanggan_id', Auth::id())
+            ->select('order_number', 'tanggal', 'waktu', 'jumlah_orang', 'status', 'note')
+            ->firstOrFail();
+
+        // Get active WhatsApp number
+        $whatsappNumber = WhatsappNumber::where('is_active', true)->first();
+        $whatsappNumberValue = $whatsappNumber ? $whatsappNumber->number : null;
+
+        return Inertia::render('reservation/Success', [
+            'auth' => ['user' => Auth::user()],
+            'reservation' => $reservation,
+            'whatsappNumber' => $whatsappNumberValue
         ]);
     }
 
     public function create()
     {
-        // Get primary WhatsApp number
-        $whatsappNumber = WhatsappNumber::where('is_primary', true)->first();
+        // Get active WhatsApp number
+        $whatsappNumber = WhatsappNumber::where('is_active', true)->first();
         $whatsappNumberValue = $whatsappNumber ? $whatsappNumber->number : null;
 
         return Inertia::render('Reservation', [
@@ -100,6 +128,19 @@ class ReservationController extends Controller
             'auth' => [
                 'user' => Auth::user()
             ],
+            'openingHours' => $this->openingHours
+        ]);
+    }
+
+    public function show(Reservation $reservation)
+    {
+        // Get active WhatsApp number
+        $whatsappNumber = WhatsappNumber::where('is_active', true)->first();
+        $whatsappNumberValue = $whatsappNumber ? $whatsappNumber->number : null;
+
+        return Inertia::render('Reservation', [
+            'reservation' => $reservation,
+            'whatsappNumber' => $whatsappNumberValue,
             'openingHours' => $this->openingHours
         ]);
     }

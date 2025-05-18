@@ -59,7 +59,8 @@ class CartResource extends Resource
                     ->money('IDR')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
+                    ->dateTime('d M Y H:i:s')
+                    ->timezone('Asia/Jakarta')
                     ->sortable(),
             ])
             ->filters([

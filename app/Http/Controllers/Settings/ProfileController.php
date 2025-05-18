@@ -43,18 +43,7 @@ class ProfileController extends Controller
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         try {
-            // Debug incoming request data
-            \Log::info('Raw Request Data:', [
-                'all' => $request->all(),
-                'no_telepon' => $request->input('no_telepon'),
-                'has_no_telepon' => $request->has('no_telepon'),
-            ]);
-
             $validated = $request->validated();
-            
-            // Debug validated data
-            \Log::info('Validated Data:', $validated);
-            
             $user = Auth::guard('customer')->user();
             
             // Handle profile photo
@@ -80,28 +69,31 @@ class ProfileController extends Controller
             $user->email = $validated['email'];
             $user->no_telepon = $validated['no_telepon'];
             
-            // Debug user data before save
-            \Log::info('User Data Before Save:', $user->toArray());
-            
             // Reset email verification if email changed
             if ($user->isDirty('email')) {
                 $user->email_verified_at = null;
-        }
+            }
 
             $user->save();
 
-            // Debug final user data
-            \Log::info('User Data After Save:', $user->fresh()->toArray());
+            // Add full URL for profile photo if exists
+            if ($user->profile_photo) {
+                $user->profile_photo_url = Storage::disk('public')->url($user->profile_photo);
+            }
 
-            return Redirect::route('profile.edit')->with('status', 'Profile updated successfully.');
+            return back()->with([
+                'status' => 'Profile updated successfully.',
+                'auth' => [
+                    'user' => $user->fresh()
+                ]
+            ]);
         } catch (\Exception $e) {
             \Log::error('Profile Update Error:', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return Redirect::route('profile.edit')
-                ->with('error', 'Failed to update profile: ' . $e->getMessage());
+            return back()->with('error', 'Failed to update profile: ' . $e->getMessage());
         }
     }
 

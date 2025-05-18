@@ -20,7 +20,8 @@ class Payment extends Model
         'order_number',
         'total_amount',
         'payment_proof',
-        'status'
+        'status',
+        'bank_account_id'
     ];
 
     /**
@@ -28,7 +29,7 @@ class Payment extends Model
      *
      * @var array
      */
-    protected $with = ['carts.menu'];
+    protected $with = ['carts.menu', 'bankAccount'];
 
     /**
      * The attributes that should be cast.
@@ -38,6 +39,14 @@ class Payment extends Model
     protected $casts = [
         'total_amount' => 'integer',
     ];
+
+    /**
+     * Get the bank account associated with this payment
+     */
+    public function bankAccount()
+    {
+        return $this->belongsTo(BankAccount::class);
+    }
 
     /**
      * Get the pelanggan that owns the Payment

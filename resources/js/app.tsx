@@ -7,6 +7,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import axios from 'axios';
 import { initializeTheme } from './hooks/use-appearance';
 import { Toaster } from 'sonner';
+import { TranslationProvider } from './contexts/TranslationContext';
 
 // Configure axios defaults
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
@@ -31,7 +32,7 @@ axios.interceptors.response.use(
     }
 );
 
-const appName = window.document.getElementsByTagName('title')[0]?.innerText || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 // Initialize Inertia
 createInertiaApp({
@@ -44,14 +45,14 @@ createInertiaApp({
         props.initialPage.props.csrf_token = csrfToken;
 
         root.render(
-            <>
+            <TranslationProvider>
                 <App {...props} />
-                <Toaster position="top-right" />
-            </>
+                <Toaster />
+            </TranslationProvider>
         );
     },
     progress: {
-        color: '#4B5563',
+        color: '#f59e0b',
     },
 });
 

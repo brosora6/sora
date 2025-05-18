@@ -8,24 +8,22 @@ use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Settings\ProfileController;
+use App\Http\Controllers\AboutController;
 
 // Public Routes
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/menu', [MenuController::class, 'index'])->name('menu');
-
-Route::get('/about', function () {
-    return Inertia::render('about');
-})->name('about');
+Route::get('/about', [AboutController::class, 'index'])->name('about');
 
 // Protected Routes
 Route::middleware(['auth:customer'])->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
-    Route::get('/reservations', [ReservationController::class, 'index'])->name('reservations');
-    Route::get('/reservations/create', [ReservationController::class, 'create'])->name('reservations.create');
-    Route::post('/reservations', [ReservationController::class, 'store'])->name('reservations.store');
+    // Reservation routes
+    Route::prefix('reservation')->group(function () {
+        Route::get('/', [ReservationController::class, 'index'])->name('reservation.index');
+        Route::get('/create', [ReservationController::class, 'create'])->name('reservation.create');
+        Route::post('/', [ReservationController::class, 'store'])->name('reservation.store');
+        Route::get('/success', [ReservationController::class, 'success'])->name('reservation.success');
+    });
 
     Route::get('/cart', [CartController::class, 'index'])->name('cart');
     
@@ -35,12 +33,46 @@ Route::middleware(['auth:customer'])->group(function () {
     Route::get('/payment/failure', [PaymentController::class, 'failure'])->name('payment.failure');
 });
 
-// Fallback route for customer login
+// Fallback route for login
 Route::get('/login', function () {
-    return redirect('/customer/login');
-});
+    if (auth()->guard('customer')->check()) {
+        return redirect()->route('home');
+    }
+    return redirect()->route('customer.login');
+})->name('login');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
 require __DIR__.'/superadmin.php';
 require __DIR__.'/pelanggan.php';
+
+// Test email route
+Route::get('/mail-test/{email}', function ($email) {
+    try {
+        \Log::info('Starting mail test to: ' . $email);
+        
+        $data = [
+            'subject' => 'Test Email from Rumah Makan Salwa',
+            'body' => 'This is a test email to verify the email configuration is working.'
+        ];
+        
+        \Mail::send('emails.test', $data, function($message) use ($email) {
+            $message->to($email)
+                    ->subject('Test Email from Rumah Makan Salwa')
+                    ->from(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME'));
+        });
+        
+        \Log::info('Mail test completed successfully');
+        return 'Test email sent successfully! Please check your inbox and spam folder.';
+    } catch (\Exception $e) {
+        \Log::error('Mail test failed: ' . $e->getMessage());
+        \Log::error('Mail settings: ' . json_encode([
+            'driver' => config('mail.default'),
+            'host' => config('mail.mailers.smtp.host'),
+            'port' => config('mail.mailers.smtp.port'),
+            'from_address' => config('mail.from.address'),
+            'from_name' => config('mail.from.name'),
+        ]));
+        return 'Error sending email: ' . $e->getMessage();
+    }
+});

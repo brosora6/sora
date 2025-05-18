@@ -1,25 +1,64 @@
 "use client"
 
+import type React from "react"
 import { Head } from "@inertiajs/react"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { Button } from "@/components/ui/button"
-import { Calendar, ChevronRight, Star, ArrowRight, Utensils, Users } from "lucide-react"
-import { motion, useScroll, useTransform } from "framer-motion"
+import { Calendar, ChevronRight, Star, ArrowRight, Utensils, Users, ChevronLeft, Plus, LoaderCircle } from "lucide-react"
+import { motion, useScroll, useTransform, AnimatePresence, type PanInfo } from "framer-motion"
+import { useTranslation } from "@/contexts/TranslationContext"
+import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
+import axios from "axios"
+
+// Configure axios
+axios.defaults.withCredentials = true
+axios.defaults.headers.common["X-CSRF-TOKEN"] = document
+  .querySelector('meta[name="csrf-token"]')
+  ?.getAttribute("content")
+axios.defaults.headers.common["Accept"] = "application/json"
 
 interface AboutProps {
   auth: {
     user: any
   }
+  recommendedMenus?: {
+    id: number
+    name: string
+    price: number
+    desc?: string
+    gambar: string
+    total_purchased: number
+    stok: number
+    status: string
+    is_recommended: boolean
+  }[]
 }
 
-export default function About({ auth }: AboutProps) {
+export default function About({ auth, recommendedMenus = [] }: AboutProps) {
+  const { t, currentLanguage, setLanguage } = useTranslation()
   const [isLoaded, setIsLoaded] = useState(true)
   const heroRef = useRef<HTMLDivElement>(null)
   const storyRef = useRef<HTMLDivElement>(null)
   const valuesRef = useRef<HTMLDivElement>(null)
   const teamRef = useRef<HTMLDivElement>(null)
+  const [activeMenuIndex, setActiveMenuIndex] = useState(0)
+  const [addingToCart, setAddingToCart] = useState<number | null>(null)
+  const [cartCount, setCartCount] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStartX, setDragStartX] = useState(0)
+
+  // Add this useEffect to handle menu rotation
+  useEffect(() => {
+    if (recommendedMenus.length > 0) {
+      const interval = setInterval(() => {
+        setActiveMenuIndex((prev) => (prev + 1) % recommendedMenus.length)
+      }, 20000)
+      return () => clearInterval(interval)
+    }
+  }, [recommendedMenus])
 
   // Parallax effect for story section
   const { scrollYProgress: storyScrollProgress } = useScroll({
@@ -45,9 +84,67 @@ export default function About({ auth }: AboutProps) {
     return urlString
   }
 
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent | PointerEvent) => {
+    setIsDragging(true)
+    if ("touches" in e) {
+      setDragStartX(e.touches[0].clientX)
+    } else {
+      setDragStartX(e.clientX)
+    }
+  }
+
+  const handleDragEnd = (e: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    setIsDragging(false)
+    if (Math.abs(info.offset.x) > 100) {
+      if (info.offset.x > 0) {
+        setActiveMenuIndex((prev) => (prev === 0 ? recommendedMenus.length - 1 : prev - 1))
+      } else {
+        setActiveMenuIndex((prev) => (prev + 1) % recommendedMenus.length)
+      }
+    }
+  }
+
+  const goToPrevious = () => {
+    setActiveMenuIndex((prev) => (prev === 0 ? recommendedMenus.length - 1 : prev - 1))
+  }
+
+  const goToNext = () => {
+    setActiveMenuIndex((prev) => (prev + 1) % recommendedMenus.length)
+  }
+
+  const handleAddToCart = async (menuId: number) => {
+    if (!auth.user) {
+      toast.error("Please log in to add items to cart")
+      window.location.href = route("customer.login")
+      return
+    }
+
+    try {
+      setAddingToCart(menuId)
+      await axios.post("/api/carts", {
+        menu_id: menuId,
+        quantity: 1,
+      })
+
+      setCartCount((prev) => prev + 1)
+      toast.success("Item added to cart successfully")
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        toast.error("Session expired. Please log in again.")
+        window.location.href = route("customer.login")
+      } else if (error.response?.status === 422) {
+        toast.error(error.response.data.message || "Validation error")
+      } else {
+        toast.error(error.response?.data?.message || "Failed to add item to cart")
+      }
+    } finally {
+      setAddingToCart(null)
+    }
+  }
+
   return (
     <>
-      <Head title="About Us" />
+      <Head title={t("nav.about")} />
       <Navbar auth={auth} />
 
       <main className="bg-[#0a0a0a] text-white overflow-hidden">
@@ -78,7 +175,9 @@ export default function About({ auth }: AboutProps) {
               className="mb-6 inline-block"
             >
               <div className="h-1 w-20 bg-amber-500 mx-auto mb-6"></div>
-              <h2 className="text-lg md:text-xl uppercase tracking-wider text-amber-400 font-medium">Our Story</h2>
+              <h2 className="text-lg md:text-xl uppercase tracking-wider text-amber-400 font-medium">
+                {t("about.hero.subtitle")}
+              </h2>
             </motion.div>
 
             <motion.h1
@@ -87,7 +186,7 @@ export default function About({ auth }: AboutProps) {
               transition={{ delay: 0.4, duration: 0.8 }}
               className="text-4xl md:text-6xl font-bold mb-8"
             >
-              ABOUT <span className="text-amber-400">RUMAH MAKAN</span> SALWA
+              {t("about.hero.title")}
             </motion.h1>
 
             <motion.p
@@ -96,8 +195,7 @@ export default function About({ auth }: AboutProps) {
               transition={{ delay: 0.6, duration: 0.8 }}
               className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-12"
             >
-              A culinary journey through the rich and diverse flavors of Indonesian cuisine, 
-              crafted with passion and served with pride.
+              {t("about.hero.description")}
             </motion.p>
 
             <motion.div
@@ -106,20 +204,20 @@ export default function About({ auth }: AboutProps) {
               transition={{ delay: 0.8, duration: 0.8 }}
             >
               <Button
-                className="px-8 py-6 bg-transparent border-2 border-white text-white font-medium rounded-none hover:bg-white hover:text-black transition-all duration-300 group overflow-hidden relative"
+                className="bg-transparent border-2 border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-black rounded-none px-8 py-5 text-lg transition-all duration-300 group relative overflow-hidden"
                 onClick={() => window.location.href = route("menu")}
               >
                 <span className="relative z-10 flex items-center">
-                  EXPLORE OUR MENU
+                  {t("about.hero.explore_menu")}
                   <motion.div
                     className="ml-2"
                     animate={{ x: [0, 5, 0] }}
                     transition={{ repeat: Number.POSITIVE_INFINITY, duration: 1.5, repeatType: "reverse" }}
                   >
-                    <Utensils className="h-5 w-5" />
+                    <ArrowRight className="h-5 w-5" />
                   </motion.div>
                 </span>
-                <span className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                <span className="absolute inset-0 bg-amber-500 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
               </Button>
             </motion.div>
           </div>
@@ -152,30 +250,14 @@ export default function About({ auth }: AboutProps) {
                 viewport={{ once: true, margin: "-100px" }}
                 transition={{ duration: 0.8 }}
               >
-                <motion.div
-                  className="inline-block mb-6"
-                  initial={{ scale: 0 }}
-                  whileInView={{ scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-                >
-                  <Star className="h-12 w-12 text-amber-500" />
-                </motion.div>
-                <h2 className="text-4xl md:text-5xl font-bold mb-6">OUR HUMBLE BEGINNINGS</h2>
-                <div className="w-20 h-1 bg-amber-500 mb-8"></div>
-                <div className="space-y-6 text-gray-300 text-lg leading-relaxed">
-                  <p>
-                    Founded in 2017, Rumah Makan Salwa is located at Jl. Balikpapan - Samarinda KM 15, Karang Joang, Kecamatan Balikpapan Utara. What started as a small restaurant has grown into a beloved culinary destination known for its affordable and delicious Indonesian cuisine.
-                  </p>
-                  <p>
-                    Our restaurant offers a variety of dishes at affordable prices, making it perfect for families, students, and workers. In addition to our budget-friendly menu packages, we also accept large orders and provide catering services for various events.
-                  </p>
-                  <p>
-                    What sets us apart is our commitment to quality. We process our own chicken, ensuring freshness and quality in every dish we serve. This dedication to quality ingredients has helped us build a reputation as a trusted dining establishment.
-                  </p>
-                  <p>
-                    Beyond our culinary focus, Rumah Makan Salwa has a social mission: to provide employment opportunities for school dropouts and those who haven't yet found work. Through our commitment to quality and service, we continue to grow as a comfortable and reliable dining place while making a positive contribution to the surrounding community.
-                  </p>
+                <div className="mb-8">
+                  <h2 className="text-3xl md:text-4xl font-bold mb-6">{t("about.story.title")}</h2>
+                  <div className="space-y-6">
+                    <p className="text-gray-300">{t("about.story.p1")}</p>
+                    <p className="text-gray-300">{t("about.story.p2")}</p>
+                    <p className="text-gray-300">{t("about.story.p3")}</p>
+                    <p className="text-gray-300">{t("about.story.p4")}</p>
+                  </div>
                 </div>
               </motion.div>
 
@@ -244,9 +326,9 @@ export default function About({ auth }: AboutProps) {
               >
                 <Star className="h-10 w-10 text-amber-500 mx-auto" />
               </motion.div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">OUR VALUES</h2>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">{t("about.values.title")}</h2>
               <p className="text-gray-400 max-w-2xl mx-auto text-lg">
-                The principles that guide everything we do, from sourcing ingredients to serving our guests.
+                {t("about.values.description")}
               </p>
               <div className="w-24 h-1 bg-amber-500 mx-auto mt-8"></div>
             </motion.div>
@@ -254,33 +336,33 @@ export default function About({ auth }: AboutProps) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
               {[
                 {
-                  title: "Authenticity",
-                  description: "We stay true to traditional recipes and cooking methods, preserving the genuine flavors of Indonesian cuisine.",
+                  title: t("about.values.authenticity.title"),
+                  description: t("about.values.authenticity.description"),
                   icon: "🌿",
                 },
                 {
-                  title: "Quality",
-                  description: "We use only the freshest, locally-sourced ingredients to create dishes that delight and satisfy our guests.",
+                  title: t("about.values.quality.title"),
+                  description: t("about.values.quality.description"),
                   icon: "✨",
                 },
                 {
-                  title: "Hospitality",
-                  description: "We treat every guest like family, providing warm, attentive service that makes everyone feel at home.",
+                  title: t("about.values.hospitality.title"),
+                  description: t("about.values.hospitality.description"),
                   icon: "🏠",
                 },
                 {
-                  title: "Innovation",
-                  description: "While respecting tradition, we continuously explore new ways to elevate and reimagine Indonesian cuisine.",
+                  title: t("about.values.innovation.title"),
+                  description: t("about.values.innovation.description"),
                   icon: "💡",
                 },
                 {
-                  title: "Community",
-                  description: "We support local farmers and suppliers, contributing to the sustainability of our community.",
+                  title: t("about.values.community.title"),
+                  description: t("about.values.community.description"),
                   icon: "🤝",
                 },
                 {
-                  title: "Passion",
-                  description: "We pour our hearts into every dish, sharing our love for Indonesian cuisine with every guest we serve.",
+                  title: t("about.values.passion.title"),
+                  description: t("about.values.passion.description"),
                   icon: "❤️",
                 },
               ].map((value, index) => (
@@ -331,9 +413,9 @@ export default function About({ auth }: AboutProps) {
               >
                 <Utensils className="h-10 w-10 text-amber-500 mx-auto" />
               </motion.div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">OUR CUISINE</h2>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">{t("about.cuisine.title")}</h2>
               <p className="text-gray-400 max-w-2xl mx-auto text-lg">
-                A celebration of Indonesia's diverse culinary heritage, featuring dishes from across the archipelago.
+                {t("about.cuisine.description")}
               </p>
               <div className="w-24 h-1 bg-amber-500 mx-auto mt-8"></div>
             </motion.div>
@@ -347,13 +429,13 @@ export default function About({ auth }: AboutProps) {
                 className="space-y-6 text-gray-300"
               >
                 <p className="text-lg leading-relaxed">
-                  At Rumah Makan Salwa, we take pride in offering a variety of Indonesian dishes at affordable prices. Our menu features a selection of budget-friendly options that don't compromise on taste or quality.
+                  {t("about.cuisine.p1")}
                 </p>
                 <p className="text-lg leading-relaxed">
-                  We process our own chicken, ensuring that every dish is prepared with the freshest ingredients. This commitment to quality has helped us build a loyal customer base who appreciate our dedication to serving delicious food at reasonable prices.
+                  {t("about.cuisine.p2")}
                 </p>
                 <p className="text-lg leading-relaxed">
-                  In addition to our regular menu, we also offer catering services for various events, from family gatherings to corporate functions. Our team is experienced in handling large orders while maintaining the quality and taste that our customers have come to expect.
+                  {t("about.cuisine.p3")}
                 </p>
                 <div className="pt-4">
                   <Button
@@ -361,7 +443,7 @@ export default function About({ auth }: AboutProps) {
                     onClick={() => window.location.href = route("menu")}
                   >
                     <span className="relative z-10 flex items-center">
-                      Explore Our Menu
+                      {t("about.cuisine.explore_menu")}
                       <motion.div
                         className="ml-2"
                         animate={{ x: [0, 5, 0] }}
@@ -376,30 +458,9 @@ export default function About({ auth }: AboutProps) {
               </motion.div>
 
               <div className="grid grid-cols-2 gap-6">
-                {[
-                  {
-                    name: "Rendang",
-                    description: "Slow-cooked beef in coconut milk and spices",
-                    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/feed11.jpg-cGKoUKFU4AYV49Cs4F96KKnZw5N1vJ.jpeg"
-                  },
-                  {
-                    name: "Nasi Goreng",
-                    description: "Indonesian fried rice with sweet soy sauce",
-                    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/feed11.jpg-cGKoUKFU4AYV49Cs4F96KKnZw5N1vJ.jpeg"
-                  },
-                  {
-                    name: "Sate Ayam",
-                    description: "Grilled chicken skewers with peanut sauce",
-                    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/feed11.jpg-cGKoUKFU4AYV49Cs4F96KKnZw5N1vJ.jpeg"
-                  },
-                  {
-                    name: "Gado-Gado",
-                    description: "Mixed vegetables with peanut sauce dressing",
-                    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/feed11.jpg-cGKoUKFU4AYV49Cs4F96KKnZw5N1vJ.jpeg"
-                  }
-                ].map((dish, index) => (
+                {(recommendedMenus || []).slice(0, 4).map((menu, index) => (
                   <motion.div
-                    key={index}
+                    key={menu.id}
                     className="relative overflow-hidden group"
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -408,14 +469,20 @@ export default function About({ auth }: AboutProps) {
                   >
                     <div className="aspect-square overflow-hidden">
                       <img
-                        src={dish.image || "/placeholder.svg"}
-                        alt={dish.name}
+                        src={`/storage/${menu.gambar}`}
+                        alt={menu.name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/images/default-menu.jpg";
+                        }}
                       />
                     </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-4">
-                      <h3 className="text-lg font-bold">{dish.name}</h3>
-                      <p className="text-sm text-gray-300">{dish.description}</p>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex flex-col justify-end p-4">
+                      <h3 className="text-lg font-bold mb-2">{menu.name}</h3>
+                      {menu.desc && (
+                        <p className="text-sm text-gray-300 line-clamp-2">{menu.desc}</p>
+                      )}
                     </div>
                   </motion.div>
                 ))}
@@ -423,8 +490,6 @@ export default function About({ auth }: AboutProps) {
             </div>
           </div>
         </div>
-
-        
 
         {/* CTA Section */}
         <div className="py-24 relative overflow-hidden">
@@ -446,9 +511,9 @@ export default function About({ auth }: AboutProps) {
               transition={{ duration: 0.8 }}
               className="max-w-3xl mx-auto"
             >
-              <h2 className="text-4xl md:text-5xl font-bold mb-8">JOIN OUR MISSION</h2>
+              <h2 className="text-4xl md:text-5xl font-bold mb-8">{t("about.cta.title")}</h2>
               <p className="text-xl text-gray-300 mb-12">
-                Experience delicious Indonesian cuisine while supporting our mission to provide employment opportunities and contribute positively to our community.
+                {t("about.cta.description")}
               </p>
               <div className="flex flex-col sm:flex-row gap-5 justify-center">
                 <Button
@@ -462,7 +527,7 @@ export default function About({ auth }: AboutProps) {
                   }}
                 >
                   <span className="relative z-10 flex items-center">
-                    MAKE A RESERVATION
+                    {t("about.cta.make_reservation")}
                     <motion.div
                       className="ml-2"
                       animate={{ x: [0, 5, 0] }}
@@ -472,22 +537,6 @@ export default function About({ auth }: AboutProps) {
                     </motion.div>
                   </span>
                   <span className="absolute inset-0 bg-amber-400 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                </Button>
-                <Button
-                  className="px-8 py-6 bg-transparent border-2 border-white text-white font-medium rounded-none hover:bg-white hover:text-black transition-all duration-300 group overflow-hidden relative"
-                  onClick={() => window.location.href = route("contact")}
-                >
-                  <span className="relative z-10 flex items-center">
-                    CONTACT US
-                    <motion.div
-                      className="ml-2"
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{ repeat: Number.POSITIVE_INFINITY, duration: 1.5, repeatType: "reverse", delay: 0.2 }}
-                    >
-                      <ChevronRight className="h-5 w-5" />
-                    </motion.div>
-                  </span>
-                  <span className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                 </Button>
               </div>
             </motion.div>

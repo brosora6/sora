@@ -37,17 +37,42 @@ class CustomerPasswordResetController extends Controller
             'email' => 'required|email',
         ]);
 
-        // We will send the password reset link to this user. Once we have attempted
-        // to send the link, we will examine the response then see the message we
-        // need to show to the user. Finally, we'll send out a proper response.
-        $status = $this->broker()->sendResetLink(
-            $request->only('email')
-        );
+        // Log the attempt
+        \Log::info('Password reset requested for email: ' . $request->email);
 
-        return $status == Password::RESET_LINK_SENT
-            ? back()->with('status', __($status))
-            : back()->withInput($request->only('email'))
-                   ->withErrors(['email' => __($status)]);
+        // Check if the user exists in the database
+        $user = \App\Models\Pelanggan::where('email', $request->email)->first();
+        
+        if (!$user) {
+            \Log::info('User not found for email: ' . $request->email);
+            return back()->withInput($request->only('email'))
+                ->withErrors(['email' => __('We could not find a user with that email address.')]);
+        }
+
+        \Log::info('User found, attempting to send reset link to: ' . $request->email);
+
+        try {
+            // Send the reset link
+            $status = $this->broker()->sendResetLink(
+                $request->only('email')
+            );
+
+            \Log::info('Reset link attempt status: ' . $status);
+
+            if ($status === Password::RESET_LINK_SENT) {
+                \Log::info('Reset link sent successfully to: ' . $request->email);
+                return back()->with('status', __('Password reset link has been sent to your email.'));
+            }
+
+            // For other errors
+            \Log::error('Error sending reset link: ' . $status);
+            return back()->withInput($request->only('email'))
+                ->withErrors(['email' => __($status)]);
+        } catch (\Exception $e) {
+            \Log::error('Exception while sending reset link: ' . $e->getMessage());
+            return back()->withInput($request->only('email'))
+                ->withErrors(['email' => 'An error occurred while sending the reset link. Please try again.']);
+        }
     }
 
     /**

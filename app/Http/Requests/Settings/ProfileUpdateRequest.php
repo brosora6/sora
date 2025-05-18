@@ -25,7 +25,7 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(Pelanggan::class)->ignore(Auth::guard('customer')->id()),
             ],
-            'no_telepon' => ['required', 'string', 'regex:/^08\d{9,11}$/'],
+            'no_telepon' => ['required', 'string', 'regex:/^0[0-9]{9,12}$/'],
             'profile_photo' => ['nullable', 'image', 'max:2048'],
             'remove_photo' => ['nullable', 'boolean'],
         ];
@@ -42,7 +42,7 @@ class ProfileUpdateRequest extends FormRequest
             'profile_photo.max' => 'The profile photo must not be larger than 2MB.',
             'profile_photo.image' => 'The file must be an image (jpeg, png, bmp, gif, svg, or webp).',
             'no_telepon.required' => 'The phone number field is required.',
-            'no_telepon.regex' => 'Please enter a valid Indonesian phone number starting with 08 followed by 9-11 digits.',
+            'no_telepon.regex' => 'Please enter a valid Indonesian phone number starting with 0 followed by 9-12 digits.',
         ];
     }
 
@@ -56,6 +56,12 @@ class ProfileUpdateRequest extends FormRequest
             $phone = $this->input('no_telepon');
             // Remove any whitespace and non-digit characters
             $phone = preg_replace('/[^0-9]/', '', $phone);
+            
+            // Ensure the number starts with 0
+            if (strlen($phone) > 0 && $phone[0] === '8') {
+                $phone = '0' . $phone;
+            }
+            
             $this->merge(['no_telepon' => $phone]);
         }
 

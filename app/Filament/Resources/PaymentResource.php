@@ -29,6 +29,10 @@ class PaymentResource extends Resource
                 Forms\Components\Select::make('pelanggan_id')
                     ->relationship('pelanggan', 'name')
                     ->required(),
+                Forms\Components\Select::make('bank_account_id')
+                    ->relationship('bankAccount', 'bank_name')
+                    ->required()
+                    ->label('Bank Account'),
                 Forms\Components\TextInput::make('total_amount')
                     ->required()
                     ->numeric()
@@ -63,13 +67,20 @@ class PaymentResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->label('Customer'),
+                Tables\Columns\TextColumn::make('bankAccount.bank_name')
+                    ->searchable()
+                    ->sortable()
+                    ->label('Bank'),
+                Tables\Columns\TextColumn::make('bankAccount.account_number')
+                    ->searchable()
+                    ->label('Account Number'),
                 Tables\Columns\TextColumn::make('carts')
                     ->label('Ordered Items')
                     ->listWithLineBreaks()
                     ->getStateUsing(function (Payment $record): array {
                         return $record->carts->map(function ($cart) {
                             return "{$cart->menu->name} (x{$cart->quantity}) - Rp " . 
-                                number_format($cart->price * $cart->quantity, 0, ',', '.');
+                                number_format($cart->price, 0, ',', '.');
                         })->toArray();
                     })
                     ->searchable(query: function (Builder $query, string $search): Builder {
@@ -93,7 +104,8 @@ class PaymentResource extends Resource
                     ])
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
+                    ->dateTime('d M Y H:i:s')
+                    ->timezone('Asia/Jakarta')
                     ->sortable()
                     ->label('Payment Date'),
             ])
@@ -123,14 +135,16 @@ class PaymentResource extends Resource
                                         Forms\Components\TextInput::make('price')
                                             ->disabled()
                                             ->prefix('Rp')
-                                            ->formatStateUsing(fn (string $state): string => number_format((int) $state, 0, ',', '.'))
+                                            ->formatStateUsing(function ($state, $record): string {
+                                                return number_format($record->price / $record->quantity, 0, ',', '.');
+                                            })
                                             ->numeric(),
                                         Forms\Components\TextInput::make('subtotal')
                                             ->label('Subtotal')
                                             ->disabled()
                                             ->prefix('Rp')
                                             ->formatStateUsing(function ($state, $record): string {
-                                                return number_format($record->price * $record->quantity, 0, ',', '.');
+                                                return number_format($record->price, 0, ',', '.');
                                             })
                                             ->numeric(),
                                     ])
@@ -143,6 +157,14 @@ class PaymentResource extends Resource
                                     ->prefix('Rp')
                                     ->formatStateUsing(fn (string $state): string => number_format((int) $state, 0, ',', '.'))
                                     ->numeric(),
+                                Forms\Components\TextInput::make('bank_name')
+                                    ->label('Bank Name')
+                                    ->disabled()
+                                    ->formatStateUsing(fn ($record) => $record->bankAccount?->bank_name),
+                                Forms\Components\TextInput::make('account_number')
+                                    ->label('Account Number')
+                                    ->disabled()
+                                    ->formatStateUsing(fn ($record) => $record->bankAccount?->account_number),
                                 Forms\Components\FileUpload::make('payment_proof')
                                     ->label('Payment Proof')
                                     ->disabled()

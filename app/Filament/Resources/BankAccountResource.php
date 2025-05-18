@@ -35,10 +35,6 @@ class BankAccountResource extends Resource
                     ->maxLength(255),
                 Forms\Components\Textarea::make('description')
                     ->maxLength(65535),
-                Forms\Components\Toggle::make('is_primary')
-                    ->required()
-                    ->label('Set as Primary')
-                    ->helperText('Only one account can be primary'),
                 Forms\Components\Toggle::make('is_active')
                     ->required()
                     ->label('Active'),
@@ -50,15 +46,16 @@ class BankAccountResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('bank_name')
-                    ->searchable(),
+                    ->searchable()
+                    ->label('Bank Name'),
                 Tables\Columns\TextColumn::make('account_number')
-                    ->searchable(),
+                    ->searchable()
+                    ->label('Account Number'),
                 Tables\Columns\TextColumn::make('account_name')
-                    ->searchable(),
-                Tables\Columns\IconColumn::make('is_primary')
-                    ->boolean(),
-                Tables\Columns\IconColumn::make('is_active')
-                    ->boolean(),
+                    ->searchable()
+                    ->label('Account Name'),
+                Tables\Columns\ToggleColumn::make('is_active')
+                    ->label('Active'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

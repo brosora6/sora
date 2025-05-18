@@ -27,15 +27,15 @@ class WhatsappNumberResource extends Resource
                 Forms\Components\TextInput::make('number')
                     ->required()
                     ->maxLength(255)
-                    ->label('WhatsApp Number'),
+                    ->label('WhatsApp Number')
+                    ->placeholder('Example: +6281234567890')
+                    ->helperText('Enter the WhatsApp number with country code (e.g., +62 for Indonesia)'),
                 Forms\Components\TextInput::make('name')
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->label('Name'),
                 Forms\Components\Textarea::make('description')
-                    ->maxLength(65535),
-                Forms\Components\Toggle::make('is_primary')
-                    ->required()
-                    ->label('Set as Primary')
-                    ->helperText('Only one number can be primary'),
+                    ->maxLength(65535)
+                    ->label('Description'),
                 Forms\Components\Toggle::make('is_active')
                     ->required()
                     ->label('Active'),
@@ -47,13 +47,16 @@ class WhatsappNumberResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('number')
-                    ->searchable(),
+                    ->searchable()
+                    ->label('WhatsApp Number'),
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
-                Tables\Columns\IconColumn::make('is_primary')
-                    ->boolean(),
-                Tables\Columns\IconColumn::make('is_active')
-                    ->boolean(),
+                    ->searchable()
+                    ->label('Name'),
+                Tables\Columns\TextColumn::make('description')
+                    ->searchable()
+                    ->label('Description'),
+                Tables\Columns\ToggleColumn::make('is_active')
+                    ->label('Active'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

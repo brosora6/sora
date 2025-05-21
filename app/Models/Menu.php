@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class Menu extends Model
 {
@@ -40,6 +41,16 @@ class Menu extends Model
         'is_recommended' => 'boolean',
         'category_id' => 'integer',
     ];
+
+    protected $appends = ['image_url'];
+
+    public function getImageUrlAttribute()
+    {
+        if ($this->gambar) {
+            return asset('storage/' . $this->gambar);
+        }
+        return null;
+    }
 
     /**
      * Get the cart items for the menu.
@@ -78,5 +89,16 @@ class Menu extends Model
         if ($this->total_purchased >= 10 && !$this->is_recommended) {
             $this->update(['is_recommended' => true]);
         }
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function ($menu) {
+            if ($menu->gambar) {
+                Storage::disk('public')->delete($menu->gambar);
+            }
+        });
     }
 }

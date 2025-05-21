@@ -14,6 +14,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\Select;
+use Illuminate\Support\Facades\Storage;
 
 class MenuResource extends Resource
 {
@@ -46,7 +47,10 @@ class MenuResource extends Resource
                     ->visibility('public')
                     ->imageEditor()
                     ->required()
-                    ->preserveFilenames(),
+                    ->preserveFilenames()
+                    ->maxSize(5120) // 5MB
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/gif'])
+                    ->moveFiles(),
                 Forms\Components\TextInput::make('stok')
                     ->required()
                     ->numeric(),

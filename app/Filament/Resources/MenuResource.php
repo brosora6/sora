@@ -45,7 +45,9 @@ class MenuResource extends Resource
                     ->directory('menu-photos')
                     ->visibility('public')
                     ->imageEditor()
-                    ->required(),
+                    ->required()
+                    ->preserveFilenames()
+                    ->basePath('storage'),
                 Forms\Components\TextInput::make('stok')
                     ->required()
                     ->numeric(),

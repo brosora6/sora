@@ -324,6 +324,7 @@ sora/
   - Documentation and user manuals
 
 ## 4. Deployed Application: Link aplikasi yang sudah di-deploy (jika ada)
+https://sorasalwa.web.id
 
 ---
 

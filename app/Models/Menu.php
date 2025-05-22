@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class Menu extends Model
 {
@@ -86,7 +87,7 @@ class Menu extends Model
 
         static::deleting(function ($menu) {
             if ($menu->gambar) {
-                Storage::disk('public')->delete($menu->gambar);
+                Storage::disk('public_store')->delete($menu->gambar);
             }
         });
     }

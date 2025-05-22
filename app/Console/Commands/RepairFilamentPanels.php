@@ -30,6 +30,12 @@ class RepairFilamentPanels extends Command
         // Create a symbolic link for storage
         $this->call('storage:link');
         
+        // Ensure store directory exists and has proper permissions
+        $storePath = public_path('store');
+        if (!File::exists($storePath)) {
+            File::makeDirectory($storePath, 0755, true);
+        }
+        
         $this->info('Filament panel configuration repaired.');
         return Command::SUCCESS;
     }

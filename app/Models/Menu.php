@@ -79,4 +79,15 @@ class Menu extends Model
             $this->update(['is_recommended' => true]);
         }
     }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function ($menu) {
+            if ($menu->gambar) {
+                Storage::disk('public')->delete($menu->gambar);
+            }
+        });
+    }
 }

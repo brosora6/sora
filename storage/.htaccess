@@ -1,0 +1,14 @@
+Options +FollowSymLinks
+RewriteEngine On
+Require all granted
+Allow from all
+
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+</IfModule>
+
+<FilesMatch "\.(jpg|jpeg|png|gif)$">
+    Order Allow,Deny
+    Allow from all
+    Satisfy Any
+</FilesMatch> 

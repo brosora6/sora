@@ -48,7 +48,7 @@ return [
 
         'public_store' => [
             'driver' => 'local',
-            'root' => public_path('store'),
+            'root' => base_path('public_html/store'),
             'url' => env('APP_URL').'/store',
             'visibility' => 'public',
             'throw' => false,

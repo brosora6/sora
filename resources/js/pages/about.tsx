@@ -469,7 +469,7 @@ export default function About({ auth, recommendedMenus = [] }: AboutProps) {
                   >
                     <div className="aspect-square overflow-hidden">
                       <img
-                        src={`/storage/${menu.gambar}`}
+                        src={`/store/${menu.gambar}`}
                         alt={menu.name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         onError={(e) => {

@@ -80,7 +80,7 @@ export default function Home({ auth, recommendedMenus = [] }: HomeProps) {
       "customer.login": "/customer/login",
       "customer.register": "/customer/register",
       menu: "/menu",
-      Reservation: "/reservations/create",
+      Reservation: "/reservation/create",
       home: "/",
     }
 
@@ -470,7 +470,7 @@ export default function Home({ auth, recommendedMenus = [] }: HomeProps) {
                               
                               <div className="relative aspect-[16/9] overflow-hidden">
                                 <motion.img
-                                  src={`/storage/${menu.gambar}`}
+                                  src={`/store/${menu.gambar}`}
                                   alt={menu.name}
                                   className="w-full h-full object-cover"
                                   whileHover={{ scale: 1.05 }}

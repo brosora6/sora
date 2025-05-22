@@ -47,6 +47,10 @@ class PaymentMonitoringWidget extends BaseWidget
 
                 ImageColumn::make('payment_proof')
                     ->label('Bukti Pembayaran')
+                    ->disk('public_store')
+                    ->square()
+                    ->defaultImageUrl('/images/placeholder.png')
+                    ->visibility('public')
                     ->circular(),
 
                 BadgeColumn::make('status')

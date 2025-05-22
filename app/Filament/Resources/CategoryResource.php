@@ -31,6 +31,15 @@ class CategoryResource extends Resource
                         Forms\Components\TextInput::make('name')
                             ->required()
                             ->maxLength(255)
+                            ->minLength(3)
+                            ->regex('/^[a-zA-Z0-9\s\-]+$/')
+                            ->validationMessages([
+                                'required' => 'The category name is required.',
+                                'min' => 'The category name must be at least 3 characters.',
+                                'max' => 'The category name cannot exceed 255 characters.',
+                                'regex' => 'The category name can only contain letters, numbers, spaces, and hyphens.',
+                            ])
+                            ->helperText('Enter a unique category name (3-255 characters)')
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (string $operation, $state, Forms\Set $set) {
                                 if ($operation !== 'create') {
@@ -44,9 +53,19 @@ class CategoryResource extends Resource
                             ->dehydrated()
                             ->required()
                             ->maxLength(255)
-                            ->unique(Category::class, 'slug', ignoreRecord: true),
+                            ->unique(Category::class, 'slug', ignoreRecord: true)
+                            ->validationMessages([
+                                'required' => 'The slug is required.',
+                                'unique' => 'This slug is already in use.',
+                                'max' => 'The slug cannot exceed 255 characters.',
+                            ])
+                            ->helperText('The slug will be automatically generated from the category name'),
                         Forms\Components\Textarea::make('description')
-                            ->maxLength(65535)
+                            ->maxLength(500)
+                            ->validationMessages([
+                                'max' => 'The description cannot exceed 500 characters.',
+                            ])
+                            ->helperText('Optional: Add a description for this category (max 500 characters)')
                             ->columnSpanFull(),
                     ])
                     ->columns(2),

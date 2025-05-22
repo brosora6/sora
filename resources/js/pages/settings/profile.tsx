@@ -118,7 +118,7 @@ export default function Profile({ auth, status, mustVerifyEmail }: ProfileProps)
   const getPhotoUrl = (): string | undefined => {
     if (photoPreview) return photoPreview
     if (auth.user.profile_photo) {
-      return `/storage/${auth.user.profile_photo}`
+      return `/store/${auth.user.profile_photo}`
     }
     return undefined
   }

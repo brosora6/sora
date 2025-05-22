@@ -13,6 +13,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Notification;
 
 class PaymentResource extends Resource
 {
@@ -26,37 +27,180 @@ class PaymentResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\TextInput::make('order_number')
+                    ->required()
+                    ->default(fn () => 'ORD-' . date('Ymd') . '-' . strtoupper(substr(md5(uniqid()), 0, 6)))
+                    ->disabled()
+                    ->dehydrated()
+                    ->unique(ignoreRecord: true)
+                    ->validationMessages([
+                        'required' => 'Order number is required.',
+                        'unique' => 'This order number already exists.',
+                    ])
+                    ->helperText('Order number will be generated automatically'),
+                
                 Forms\Components\Select::make('pelanggan_id')
                     ->relationship('pelanggan', 'name')
-                    ->required(),
+                    ->required()
+                    ->searchable()
+                    ->preload()
+                    ->exists('pelanggans', 'id')
+                    ->validationMessages([
+                        'required' => 'Please select a customer.',
+                        'exists' => 'The selected customer does not exist.',
+                    ])
+                    ->helperText('Select the customer making the payment')
+                    ->live(),
+                
                 Forms\Components\Select::make('bank_account_id')
                     ->relationship('bankAccount', 'bank_name')
                     ->required()
-                    ->label('Bank Account'),
+                    ->label('Bank Account')
+                    ->searchable()
+                    ->preload()
+                    ->exists('bank_accounts', 'id')
+                    ->validationMessages([
+                        'required' => 'Please select a bank account.',
+                        'exists' => 'The selected bank account does not exist.',
+                    ])
+                    ->helperText('Select the bank account for payment'),
+                
+                Forms\Components\Repeater::make('carts')
+                    ->schema([
+                        Forms\Components\Select::make('menu_id')
+                            ->options(function () {
+                                return \App\Models\Menu::where('status', 'active')
+                                    ->pluck('name', 'id');
+                            })
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->exists('menus', 'id')
+                            ->validationMessages([
+                                'required' => 'Please select a menu item.',
+                                'exists' => 'The selected menu item does not exist.',
+                            ])
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                if ($state) {
+                                    $menu = \App\Models\Menu::find($state);
+                                    if ($menu) {
+                                        $price = (int) $menu->price;
+                                        $quantity = (int) ($get('quantity') ?? 1);
+                                        $set('price', $price * $quantity);
+                                        
+                                        // Recalculate total amount
+                                        static::recalculateTotalAmount($set, $get);
+                                    }
+                                }
+                            }),
+                        Forms\Components\TextInput::make('quantity')
+                            ->required()
+                            ->numeric()
+                            ->minValue(1)
+                            ->maxValue(99)
+                            ->integer()
+                            ->validationMessages([
+                                'required' => 'Quantity is required.',
+                                'numeric' => 'Quantity must be a number.',
+                                'min' => 'Quantity must be at least 1.',
+                                'max' => 'Quantity cannot exceed 99.',
+                                'integer' => 'Quantity must be a whole number.',
+                            ])
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                $menuId = $get('menu_id');
+                                if ($menuId && $state) {
+                                    $menu = \App\Models\Menu::find($menuId);
+                                    if ($menu) {
+                                        $price = (int) $menu->price;
+                                        $quantity = (int) $state;
+                                        $set('price', $price * $quantity);
+                                        
+                                        // Recalculate total amount
+                                        static::recalculateTotalAmount($set, $get);
+                                    }
+                                }
+                            }),
+                        Forms\Components\TextInput::make('price')
+                            ->required()
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->disabled()
+                            ->dehydrated(),
+                        Forms\Components\Hidden::make('pelanggan_id')
+                            ->default(fn (Forms\Get $get) => $get('../../pelanggan_id')),
+                    ])
+                    ->columns(4)
+                    ->defaultItems(1)
+                    ->reorderable(false)
+                    ->columnSpanFull()
+                    ->live()
+                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get) {
+                        static::recalculateTotalAmount($set, $get);
+                    })
+                    ->createItemButtonLabel('Add Menu Item')
+                    ->itemLabel(fn (array $state): ?string => isset($state['menu_id']) ? \App\Models\Menu::find($state['menu_id'])?->name : null),
+                
                 Forms\Components\TextInput::make('total_amount')
                     ->required()
                     ->numeric()
-                    ->prefix('Rp'),
+                    ->minValue(1000)
+                    ->prefix('Rp')
+                    ->disabled()
+                    ->dehydrated()
+                    ->validationMessages([
+                        'required' => 'Total amount is required.',
+                        'numeric' => 'Total amount must be a number.',
+                        'min' => 'Total amount must be at least Rp 1.000.',
+                    ])
+                    ->helperText('Total amount will be calculated automatically based on selected cart items'),
+                
                 Forms\Components\FileUpload::make('payment_proof')
                     ->image()
-                    ->disk('public')
-                    ->directory('payment-proofs')
+                    ->disk('public_store')
                     ->visibility('public')
-                    ->required(),
+                    ->required()
+                    ->maxSize(5120) // 5MB
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
+                    ->validationMessages([
+                        'required' => 'Please upload a payment proof image.',
+                        'maxSize' => 'The image size should not exceed 5MB.',
+                        'acceptedFileTypes' => 'Only JPG, JPEG, and PNG images are allowed.',
+                    ])
+                    ->helperText('Upload a clear image of your payment proof (max 5MB)'),
+                
                 Forms\Components\Select::make('status')
                     ->options([
                         'pending' => 'Pending',
                         'completed' => 'Completed',
                         'failed' => 'Failed',
                     ])
-                    ->required(),
-            ]);
+                    ->required()
+                    ->default('pending')
+                    ->validationMessages([
+                        'required' => 'Please select a payment status.',
+                    ])
+                    ->helperText('Select the current status of the payment')
+                    ->live()
+                    ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                        if ($state === 'completed' && !$get('payment_proof')) {
+                            $set('status', 'pending');
+                            Notification::make()
+                                ->title('Payment proof is required for completed payments')
+                                ->warning()
+                                ->send();
+                        }
+                    }),
+            ])
+            ->statePath('data')
+            ->live();
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with('carts.menu'))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['carts.menu', 'pelanggan', 'bankAccount']))
             ->columns([
                 Tables\Columns\TextColumn::make('order_number')
                     ->searchable()
@@ -92,7 +236,7 @@ class PaymentResource extends Resource
                     ->money('IDR')
                     ->sortable(),
                 Tables\Columns\ImageColumn::make('payment_proof')
-                    ->disk('public')
+                    ->disk('public_store')
                     ->square()
                     ->defaultImageUrl('/images/placeholder.png')
                     ->visibility('public'),
@@ -169,6 +313,8 @@ class PaymentResource extends Resource
                                     ->label('Payment Proof')
                                     ->disabled()
                                     ->image()
+                                    ->disk('public_store')
+                                    ->visibility('public')
                                     ->columnSpanFull(),
                             ])
                     ]),
@@ -194,5 +340,31 @@ class PaymentResource extends Resource
             'create' => Pages\CreatePayment::route('/create'),
             'edit' => Pages\EditPayment::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['carts.menu', 'pelanggan', 'bankAccount']);
+    }
+
+    protected static function recalculateTotalAmount(Forms\Set $set, Forms\Get $get): void
+    {
+        $carts = $get('carts');
+        if ($carts) {
+            $total = collect($carts)
+                ->sum(function ($cart) {
+                    $menu = \App\Models\Menu::find($cart['menu_id']);
+                    if ($menu) {
+                        $price = (int) $menu->price;
+                        $quantity = (int) $cart['quantity'];
+                        return $price * $quantity;
+                    }
+                    return 0;
+                });
+            $set('total_amount', $total);
+        } else {
+            $set('total_amount', 0);
+        }
     }
 }

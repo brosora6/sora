@@ -15,8 +15,8 @@ class WhatsappNumberResource extends Resource
     protected static ?string $model = WhatsappNumber::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-phone';
-
     protected static ?string $navigationGroup = 'Settings';
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $modelLabel = 'WhatsApp Number';
 
@@ -26,19 +26,34 @@ class WhatsappNumberResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('number')
                     ->required()
-                    ->maxLength(255)
-                    ->label('WhatsApp Number')
-                    ->placeholder('Example: +6281234567890')
-                    ->helperText('Enter the WhatsApp number with country code (e.g., +62 for Indonesia)'),
+                    ->tel()
+                    ->regex('/^[0-9+\-\s()]{10,15}$/')
+                    ->validationMessages([
+                        'required' => 'The WhatsApp number is required.',
+                        'regex' => 'Please enter a valid WhatsApp number (10-15 digits).',
+                    ])
+                    ->helperText('Enter a valid WhatsApp number (e.g., +6281234567890)'),
+                
                 Forms\Components\TextInput::make('name')
-                    ->maxLength(255)
-                    ->label('Name'),
-                Forms\Components\Textarea::make('description')
-                    ->maxLength(65535)
-                    ->label('Description'),
-                Forms\Components\Toggle::make('is_active')
                     ->required()
-                    ->label('Active'),
+                    ->maxLength(255)
+                    ->minLength(3)
+                    ->validationMessages([
+                        'required' => 'The name is required.',
+                        'min' => 'The name must be at least 3 characters.',
+                        'max' => 'The name cannot exceed 255 characters.',
+                    ]),
+                
+                Forms\Components\Textarea::make('description')
+                    ->maxLength(500)
+                    ->validationMessages([
+                        'max' => 'The description cannot exceed 500 characters.',
+                    ]),
+                
+                Forms\Components\Toggle::make('is_active')
+                    ->label('Active Status')
+                    ->helperText('Only one number can be active at a time')
+                    ->default(false),
             ]);
     }
 
@@ -48,22 +63,31 @@ class WhatsappNumberResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('number')
                     ->searchable()
-                    ->label('WhatsApp Number'),
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
-                    ->label('Name'),
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('description')
-                    ->searchable()
-                    ->label('Description'),
-                Tables\Columns\ToggleColumn::make('is_active')
-                    ->label('Active'),
+                    ->limit(50)
+                    ->searchable(),
+                Tables\Columns\IconColumn::make('is_active')
+                    ->boolean()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('Active Status')
+                    ->placeholder('All Numbers')
+                    ->trueLabel('Active Only')
+                    ->falseLabel('Inactive Only'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

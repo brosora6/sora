@@ -72,7 +72,7 @@ class PaymentController extends Controller
             }
 
             // Store the payment proof image
-            $path = $request->file('payment_proof')->store('payment-proofs', 'public');
+            $path = $request->file('payment_proof')->store('payment-proofs', 'public_store');
 
             // Generate unique order number
             $orderNumber = $this->generateOrderNumber();

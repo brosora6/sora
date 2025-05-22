@@ -50,25 +50,50 @@ class PelangganResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('name')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->minLength(3)
+                    ->regex('/^[a-zA-Z\s]+$/')
+                    ->validationMessages([
+                        'regex' => 'Nama hanya boleh berisi huruf dan spasi',
+                        'min' => 'Nama minimal 3 karakter',
+                    ]),
                 Forms\Components\TextInput::make('email')
                     ->email()
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->unique(ignoreRecord: true)
+                    ->regex('/^[a-zA-Z0-9._%+-]+@gmail\.com$/')
+                    ->validationMessages([
+                        'unique' => 'Email sudah terdaftar',
+                        'regex' => 'Email harus menggunakan domain Gmail (@gmail.com)',
+                    ]),
                 Forms\Components\TextInput::make('no_telepon')
                     ->tel()
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(15)
+                    ->minLength(10)
+                    ->regex('/^08[0-9]{8,13}$/')
+                    ->validationMessages([
+                        'regex' => 'Nomor telepon harus dimulai dengan 08 dan diikuti 8-13 digit angka',
+                        'min' => 'Nomor telepon minimal 10 digit',
+                        'max' => 'Nomor telepon maksimal 15 digit',
+                    ]),
                 Forms\Components\Section::make('Password')
                     ->schema([
                         Forms\Components\TextInput::make('password')
                             ->password()
                             ->dehydrated(fn ($state) => filled($state))
                             ->required(fn (string $context): bool => $context === 'create')
+                            ->minLength(8)
                             ->maxLength(255)
+                            ->regex('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/')
                             ->confirmed()
                             ->autocomplete('new-password')
-                            ->label(fn (string $context): string => $context === 'edit' ? 'New Password' : 'Password'),
+                            ->label(fn (string $context): string => $context === 'edit' ? 'New Password' : 'Password')
+                            ->validationMessages([
+                                'min' => 'Password minimal 8 karakter',
+                                'regex' => 'Password harus mengandung huruf besar, huruf kecil, dan angka',
+                            ]),
                         Forms\Components\TextInput::make('password_confirmation')
                             ->password()
                             ->required(fn (string $context): bool => $context === 'create')
@@ -79,8 +104,7 @@ class PelangganResource extends Resource
                     ->columns(2),
                 Forms\Components\FileUpload::make('profile_photo')
                     ->image()
-                    ->disk('public')
-                    ->directory('profile-photos')
+                    ->disk('public_store')
                     ->visibility('public')
                     ->imageEditor()
                     ->circleCropper()
@@ -89,6 +113,11 @@ class PelangganResource extends Resource
                     ->imageResizeTargetWidth('300')
                     ->imageResizeTargetHeight('300')
                     ->maxSize(5120) // 5MB
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
+                    ->validationMessages([
+                        'maxSize' => 'Ukuran file maksimal 5MB',
+                        'acceptedFileTypes' => 'Format file harus JPG, JPEG, atau PNG',
+                    ])
                     ->label('Profile Photo'),
             ]);
     }
@@ -98,7 +127,7 @@ class PelangganResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\ImageColumn::make('profile_photo')
-                    ->disk('public')
+                    ->disk('public_store')
                     ->circular()
                     ->defaultImageUrl('/images/placeholder.jpg')
                     ->size(40),

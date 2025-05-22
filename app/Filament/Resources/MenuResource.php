@@ -31,27 +31,67 @@ class MenuResource extends Resource
                     ->label('Category')
                     ->options(Category::pluck('name', 'id'))
                     ->required()
-                    ->searchable(),
+                    ->searchable()
+                    ->exists('categories', 'id')
+                    ->validationMessages([
+                        'exists' => 'The selected category does not exist.',
+                    ]),
                 Forms\Components\TextInput::make('name')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->minLength(3)
+                    ->regex('/^[a-zA-Z0-9\s\-]+$/')
+                    ->validationMessages([
+                        'regex' => 'The name can only contain letters, numbers, spaces, and hyphens.',
+                        'min' => 'The name must be at least 3 characters.',
+                    ]),
                 Forms\Components\TextInput::make('price')
                     ->required()
                     ->numeric()
-                    ->prefix('Rp'),
+                    ->minValue(0)
+                    ->prefix('Rp')
+                    ->step(100) // Minimum increment of 100
+                    ->validationMessages([
+                        'min' => 'The price cannot be negative.',
+                        'numeric' => 'Please enter a valid number for the price.',
+                        'required' => 'The price field is required.',
+                    ])
+                    ->helperText('Enter price in Rupiah (minimum increment: 100)'),
                 Forms\Components\FileUpload::make('gambar')
                     ->image()
-                    ->disk('public')
-                    ->directory('menu-photos')
+                    ->disk('public_store')
                     ->visibility('public')
                     ->imageEditor()
-                    ->required(),
+                    ->required()
+                    ->maxSize(5120) // 5MB
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
+                    ->validationMessages([
+                        'maxSize' => 'The image size should not exceed 5MB.',
+                        'acceptedFileTypes' => 'Only JPG, JPEG, and PNG images are allowed.',
+                    ]),
                 Forms\Components\TextInput::make('stok')
                     ->required()
-                    ->numeric(),
+                    ->numeric()
+                    ->minValue(0)
+                    ->integer()
+                    ->maxValue(99)
+                    ->validationMessages([
+                        'min' => 'The stock cannot be negative.',
+                        'max' => 'The stock cannot exceed 99.',
+                        'integer' => 'The stock must be a whole number.',
+                        'numeric' => 'Please enter a valid number for the stock.',
+                        'required' => 'The stock field is required.',
+                    ])
+                    ->helperText('Enter stock quantity (0-99)'),
                 Forms\Components\Textarea::make('desc')
                     ->required()
-                    ->columnSpanFull(),
+                    ->minLength(10)
+                    ->maxLength(1000)
+                    ->columnSpanFull()
+                    ->validationMessages([
+                        'min' => 'The description must be at least 10 characters.',
+                        'max' => 'The description cannot exceed 1000 characters.',
+                    ]),
                 Forms\Components\Toggle::make('is_recommended')
                     ->label('Show in Recommendations')
                     ->helperText('This menu will be shown in the recommended section on the home page')
@@ -76,7 +116,7 @@ class MenuResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
                 Tables\Columns\ImageColumn::make('gambar')
-                    ->disk('public')
+                    ->disk('public_store')
                     ->square()
                     ->defaultImageUrl('/images/placeholder.png')
                     ->visibility('public'),

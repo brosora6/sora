@@ -25,7 +25,7 @@ class ProfileController extends Controller
         
         // Add full URL for profile photo
         if ($user->profile_photo) {
-            $user->profile_photo_url = Storage::disk('public')->url($user->profile_photo);
+            $user->profile_photo_url = Storage::disk('public_store')->url($user->profile_photo);
         }
         
         return Inertia::render('settings/profile', [
@@ -50,16 +50,16 @@ class ProfileController extends Controller
             if ($request->hasFile('profile_photo')) {
                 // Delete old photo if exists
                 if ($user->profile_photo) {
-                    Storage::disk('public')->delete($user->profile_photo);
+                    Storage::disk('public_store')->delete($user->profile_photo);
                 }
                 
                 // Store new photo in profile-photos directory
-                $path = $request->file('profile_photo')->store('profile-photos', 'public');
+                $path = $request->file('profile_photo')->store('profile-photos', 'public_store');
                 $user->profile_photo = $path;
             } elseif ($request->boolean('remove_photo')) {
                 // Handle photo removal
                 if ($user->profile_photo) {
-                    Storage::disk('public')->delete($user->profile_photo);
+                    Storage::disk('public_store')->delete($user->profile_photo);
                     $user->profile_photo = null;
                 }
             }
@@ -78,7 +78,7 @@ class ProfileController extends Controller
 
             // Add full URL for profile photo if exists
             if ($user->profile_photo) {
-                $user->profile_photo_url = Storage::disk('public')->url($user->profile_photo);
+                $user->profile_photo_url = Storage::disk('public_store')->url($user->profile_photo);
             }
 
             return back()->with([
@@ -110,7 +110,7 @@ class ProfileController extends Controller
 
         // Delete profile photo if exists
         if ($user->profile_photo) {
-            Storage::disk('public')->delete($user->profile_photo);
+            Storage::disk('public_store')->delete($user->profile_photo);
         }
 
         Auth::guard('customer')->logout();

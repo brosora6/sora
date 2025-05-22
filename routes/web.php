@@ -39,7 +39,7 @@ Route::get('/login', function () {
         return redirect()->route('home');
     }
     return redirect()->route('customer.login');
-})->name('login');
+})->name('login')->middleware('guest:customer');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

@@ -162,9 +162,9 @@ export default function Navbar({ auth, cartCount = 0 }: NavbarProps) {
                     <button className="focus:outline-none">
                       {auth.user.profile_photo ? (
                         <img
-                          src={`/storage/${auth.user.profile_photo}`}
+                          src={`/store/${auth.user.profile_photo}`}
                           alt={auth.user.name}
-                          className="h-8 w-8 rounded-full object-cover transition-all duration-300 hover:border-2 hover:border-white"
+                          className="h-8 w-8 rounded-full object-cover"
                         />
                       ) : (
                         <div className="h-8 w-8 rounded-full bg-amber-500 flex items-center justify-center transition-all duration-300 hover:bg-amber-400">

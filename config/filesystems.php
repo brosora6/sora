@@ -38,10 +38,18 @@ return [
             'report' => false,
         ],
 
-        'public' => [
+        // 'public' => [
+        //     'driver' => 'local',
+        //     'root' => storage_path('app/public'),
+        //     'url' => env('APP_URL').'/storage',
+        //     'visibility' => 'public',
+        //     'throw' => false,
+        // ],
+
+        'public_store' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'root' => public_path('store'),
+            'url' => env('APP_URL').'/store',
             'visibility' => 'public',
             'throw' => false,
         ],

@@ -166,7 +166,7 @@ export default function Cart({ auth, carts: initialCarts = [] }: CartProps) {
                                                 className="h-32 w-32 flex-shrink-0 overflow-hidden rounded-lg bg-gray-900"
                                             >
                                                 <img
-                                                    src={`/storage/${item.menu?.gambar}`}
+                                                    src={`/store/${item.menu?.gambar}`}
                                                     alt={item.menu?.name}
                                                     className="h-full w-full object-cover"
                                                     onError={(e) => {

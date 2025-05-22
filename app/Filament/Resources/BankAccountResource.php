@@ -26,18 +26,54 @@ class BankAccountResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('bank_name')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->minLength(3)
+                    ->regex('/^[a-zA-Z\s\-]+$/')
+                    ->validationMessages([
+                        'required' => 'The bank name is required.',
+                        'min' => 'The bank name must be at least 3 characters.',
+                        'max' => 'The bank name cannot exceed 255 characters.',
+                        'regex' => 'The bank name can only contain letters, spaces, and hyphens.',
+                    ])
+                    ->helperText('Enter the full name of the bank'),
+                
                 Forms\Components\TextInput::make('account_number')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(20)
+                    ->minLength(10)
+                    ->regex('/^[0-9]+$/')
+                    ->validationMessages([
+                        'required' => 'The account number is required.',
+                        'min' => 'The account number must be at least 10 digits.',
+                        'max' => 'The account number cannot exceed 20 digits.',
+                        'regex' => 'The account number can only contain numbers.',
+                    ])
+                    ->helperText('Enter the bank account number (10-20 digits)'),
+                
                 Forms\Components\TextInput::make('account_name')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->minLength(3)
+                    ->regex('/^[a-zA-Z\s\-]+$/')
+                    ->validationMessages([
+                        'required' => 'The account name is required.',
+                        'min' => 'The account name must be at least 3 characters.',
+                        'max' => 'The account name cannot exceed 255 characters.',
+                        'regex' => 'The account name can only contain letters, spaces, and hyphens.',
+                    ])
+                    ->helperText('Enter the name of the account holder'),
+                
                 Forms\Components\Textarea::make('description')
-                    ->maxLength(65535),
+                    ->maxLength(500)
+                    ->validationMessages([
+                        'max' => 'The description cannot exceed 500 characters.',
+                    ])
+                    ->helperText('Optional: Add any additional information about this bank account'),
+                
                 Forms\Components\Toggle::make('is_active')
-                    ->required()
-                    ->label('Active'),
+                    ->label('Active Status')
+                    ->helperText('Toggle to activate or deactivate this bank account')
+                    ->default(false),
             ]);
     }
 
@@ -47,22 +83,31 @@ class BankAccountResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('bank_name')
                     ->searchable()
-                    ->label('Bank Name'),
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('account_number')
                     ->searchable()
-                    ->label('Account Number'),
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('account_name')
                     ->searchable()
-                    ->label('Account Name'),
-                Tables\Columns\ToggleColumn::make('is_active')
-                    ->label('Active'),
+                    ->sortable(),
+                Tables\Columns\IconColumn::make('is_active')
+                    ->boolean()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('Active Status')
+                    ->placeholder('All Accounts')
+                    ->trueLabel('Active Only')
+                    ->falseLabel('Inactive Only'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

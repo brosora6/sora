@@ -61,6 +61,15 @@ class Payment extends Model
      */
     public function carts(): HasMany
     {
-        return $this->hasMany(Cart::class)->with('menu');
+        return $this->hasMany(Cart::class)
+            ->with('menu');
+    }
+
+    /**
+     * Get the menus associated with this payment through carts
+     */
+    public function menus()
+    {
+        return $this->hasManyThrough(Menu::class, Cart::class);
     }
 }

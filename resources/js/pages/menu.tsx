@@ -364,11 +364,9 @@ export default function Menu({ auth }: MenuProps) {
                         
                         <div className="relative aspect-[4/3] overflow-hidden w-full -mt-6">
                           <motion.img
-                            src={`/storage/${menu.gambar}`}
+                            src={`/store/${menu.gambar}`}
                             alt={menu.name}
-                            className="absolute inset-0 w-full h-full object-cover"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ duration: 0.3 }}
+                            className="h-full w-full object-cover"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement
                               target.src = "/images/default-menu.jpg"

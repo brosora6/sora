@@ -27,18 +27,56 @@ class CartResource extends Resource
             ->schema([
                 Forms\Components\Select::make('pelanggan_id')
                     ->relationship('pelanggan', 'name')
-                    ->required(),
+                    ->required()
+                    ->searchable()
+                    ->preload()
+                    ->validationMessages([
+                        'required' => 'Please select a customer.',
+                    ])
+                    ->helperText('Select the customer for this cart'),
+                
                 Forms\Components\Select::make('menu_id')
                     ->relationship('menu', 'name')
-                    ->required(),
+                    ->required()
+                    ->searchable()
+                    ->preload()
+                    ->live()
+                    ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                        if ($state) {
+                            $menu = \App\Models\Menu::find($state);
+                            if ($menu) {
+                                $quantity = $get('quantity') ?? 1;
+                                $totalPrice = $menu->price * $quantity;
+                                $set('price', $totalPrice);
+                            }
+                        }
+                    }),
+                
                 Forms\Components\TextInput::make('quantity')
                     ->required()
                     ->numeric()
-                    ->minValue(1),
+                    ->minValue(1)
+                    ->maxValue(99)
+                    ->integer()
+                    ->live()
+                    ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                        $menuId = $get('menu_id');
+                        if ($menuId && $state) {
+                            $menu = \App\Models\Menu::find($menuId);
+                            if ($menu) {
+                                $totalPrice = $menu->price * $state;
+                                $set('price', $totalPrice);
+                            }
+                        }
+                    }),
+                
                 Forms\Components\TextInput::make('price')
                     ->required()
                     ->numeric()
-                    ->prefix('Rp'),
+                    ->prefix('Rp')
+                    ->disabled()
+                    ->dehydrated()
+                    ->helperText('Total price will be calculated automatically based on menu price and quantity'),
             ]);
     }
 
@@ -48,31 +86,64 @@ class CartResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('pelanggan.name')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->label('Customer'),
                 Tables\Columns\TextColumn::make('menu.name')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->label('Menu Item'),
                 Tables\Columns\TextColumn::make('quantity')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->label('Quantity'),
                 Tables\Columns\TextColumn::make('price')
                     ->money('IDR')
-                    ->sortable(),
+                    ->sortable()
+                    ->label('Total Price'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime('d M Y H:i:s')
                     ->timezone('Asia/Jakarta')
-                    ->sortable(),
+                    ->sortable()
+                    ->label('Added Date'),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('menu')
+                    ->relationship('menu', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->label('Filter by Menu'),
+                Tables\Filters\SelectFilter::make('pelanggan')
+                    ->relationship('pelanggan', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->label('Filter by Customer'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->before(function (Cart $record) {
+                        // Check if the menu is still available
+                        if (!$record->menu || $record->menu->stok < $record->quantity) {
+                            throw new \Exception('The selected menu item is no longer available in the requested quantity.');
+                        }
+                    }),
+                Tables\Actions\DeleteAction::make()
+                    ->before(function (Cart $record) {
+                        // Check if the cart item is part of a completed payment
+                        if ($record->payment && $record->payment->status === 'completed') {
+                            throw new \Exception('Cannot delete cart items from completed payments.');
+                        }
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->before(function ($records) {
+                            foreach ($records as $record) {
+                                if ($record->payment && $record->payment->status === 'completed') {
+                                    throw new \Exception('Cannot delete cart items from completed payments.');
+                                }
+                            }
+                        }),
                 ]),
             ]);
     }

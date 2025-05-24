@@ -1,4 +1,4 @@
-# Restaurant API Documentation
+# SORA API Documentation
 
 ## Base URL
 `/api`

@@ -51,12 +51,29 @@ export default function Cart({ auth, carts: initialCarts = [] }: CartProps) {
     const handleRemoveFromCart = async (cartId: number) => {
         try {
             setLoading(prev => ({ ...prev, [cartId]: true }));
-            await api.delete(`/carts/${cartId}`);
+            await api.delete(`/carts/${cartId}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
             await fetchCarts(); // Refresh cart data
             toast.success('Item removed from cart');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error removing item:', error);
-            toast.error('Failed to remove item from cart');
+            if (error.response?.status === 403) {
+                if (error.response?.data?.message === 'Unauthorized.') {
+                    toast.error('Session expired. Please log in again.');
+                    window.location.href = '/customer/login';
+                } else {
+                    toast.error('You are not authorized to remove this item.');
+                }
+            } else if (error.response?.status === 419) {
+                toast.error('Session expired. Refreshing...');
+                window.location.reload();
+            } else {
+                toast.error('Failed to remove item from cart');
+            }
         } finally {
             setLoading(prev => ({ ...prev, [cartId]: false }));
         }
@@ -89,6 +106,10 @@ export default function Cart({ auth, carts: initialCarts = [] }: CartProps) {
             onFinish: () => setIsProcessing(false)
         });
     };
+
+    useEffect(() => {
+        fetchCarts();
+    }, []);
 
     return (
         <>

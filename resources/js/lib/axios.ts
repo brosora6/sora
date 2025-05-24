@@ -37,7 +37,7 @@ api.interceptors.request.use(async (config) => {
     // If no CSRF token, try to get a new one
     if (!token || !xsrfToken) {
         try {
-            await axios.get('/sanctum/csrf-cookie');
+            await axios.get('/sanctum/csrf-cookie', { withCredentials: true });
             const newToken = getCSRFToken();
             const newXsrfToken = getXSRFToken();
             if (newToken) config.headers['X-CSRF-TOKEN'] = newToken;
@@ -57,7 +57,7 @@ api.interceptors.response.use(
         if (error.response?.status === 419) {
             // CSRF token mismatch - try to refresh the token
             try {
-                await axios.get('/sanctum/csrf-cookie');
+                await axios.get('/sanctum/csrf-cookie', { withCredentials: true });
                 // Retry the original request
                 return api.request(error.config);
             } catch (e) {
@@ -65,8 +65,8 @@ api.interceptors.response.use(
                 window.location.href = '/customer/login';
                 return Promise.reject(e);
             }
-        } else if (error.response?.status === 401) {
-            // Unauthorized - redirect to customer login
+        } else if (error.response?.status === 401 || error.response?.status === 403) {
+            // Unauthorized or Forbidden - redirect to customer login
             window.location.href = '/customer/login';
         }
         return Promise.reject(error);

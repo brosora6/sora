@@ -9,17 +9,45 @@ export default defineConfig({
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             ssr: 'resources/js/ssr.tsx',
-            refresh: true,
+            refresh: false,
         }),
         react(),
         tailwindcss(),
     ],
     esbuild: {
         jsx: 'automatic',
+        target: 'es2020',
+        supported: {
+            'top-level-await': true
+        },
+    },
+    build: {
+        target: 'es2020',
+        minify: 'esbuild',
+        sourcemap: false,
+        chunkSizeWarningLimit: 1000,
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    vendor: ['react', 'react-dom'],
+                },
+            },
+        },
     },
     resolve: {
         alias: {
             'ziggy-js': resolve(__dirname, 'vendor/tightenco/ziggy'),
+        },
+    },
+    optimizeDeps: {
+        esbuildOptions: {
+            target: 'es2020',
+        },
+    },
+    server: {
+        hmr: false,
+        watch: {
+            usePolling: false,
         },
     },
 });

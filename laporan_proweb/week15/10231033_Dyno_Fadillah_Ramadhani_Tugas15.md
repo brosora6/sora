@@ -5,7 +5,7 @@
 
 **Pekan ke -** : 15
 
-**Tanggal** : 01/05/2025
+**Tanggal** : 23/05/2025
 
 ---
 ## Anggota Kelompok ##
@@ -18,24 +18,25 @@
 ---
 
 ## Progress Summary
-[Ringkasan progres minggu ini dalam 2-3 kalimat]
+Pada minggu terakhir ini, tim telah menyelesaikan seluruh pengembangan aplikasi SORA dengan berhasil melakukan finalisasi dokumentasi, pembuatan tag final di repository GitHub, dan deployment aplikasi ke Cpanel. Presentasi final telah disiapkan dengan lengkap mencakup penjelasan tentang SORA, latar belakang, tujuan, pengguna, teknologi, dan arsitektur sistem.
 
 ## Accomplished Tasks
-- [Task 1 yang berhasil diselesaikan]
-- [Task 2 yang berhasil diselesaikan]
-- [Task 3 yang berhasil diselesaikan]
+- Menyelesaikan dan memfinalisasi seluruh dokumentasi proyek (README, API docs, user manual)
+- Membuat tag final di repository GitHub dan melakukan deployment ke Cpanel
+- Menyiapkan presentasi final yang mencakup penjelasan lengkap tentang SORA
+- Melakukan final testing dan memastikan semua fitur berjalan dengan baik
 
 ## Challenges & Solutions
-- **Challenge 1**: [Deskripsi tantangan]
-  - **Solution**: [Deskripsi solusi]
-- **Challenge 2**: [Deskripsi tantangan]
-  - **Solution**: [Deskripsi solusi]
+- **Challenge 1**: Deployment ke Cpanel mengalami kendala karena konfigurasi server yang berbeda
+  - **Solution**: Melakukan penyesuaian konfigurasi environment dan memastikan semua dependensi terinstall dengan benar
+
+- **Challenge 2**: Symlink storage mengalami error saat deployment di Cpanel
+  - **Solution**: Mengubah konfigurasi penyimpanan file ke folder public/store untuk mengatasi masalah symlink
 
 ## Next Week Plan
-- [Task 1 untuk minggu depan]
-- [Task 2 untuk minggu depan]
-- [Task 3 untuk minggu depan]
-
+- Monitoring dan maintenance aplikasi yang sudah di-deploy
+- Persiapan untuk penyerahan proyek ke Rumah Makan Salwa
+- Evaluasi feedback dari pengguna untuk pengembangan selanjutnya
 
 ## Contributions
 - **Amazia Devid Saputra**: 
@@ -63,10 +64,23 @@
 
 ## Screenshots / Demo
 ## 1. Final Presentation: Slide dan demo lengkap (15-20 menit)
+<img src="ssppt.png">
+
+https://www.canva.com/design/DAGoIfnGIN8/s2O9yDfJpCp4w7ohQ3B2mg/edit?utm_content=DAGoIfnGIN8&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
+
+Presentasi akan menjelaskan:
+1. Apa itu SORA
+2. Latar Belakang SORA
+3. Tujuan SORA
+4. Pengguna & Stakeholder
+5. Teknologi yang Digunakan
+6. Arsitektur Sistem
 
 ---
 
 ## 2. Complete Documentation: README, API docs, user manual
+
+<img src="readme.png">
 
 ### README
 Sora adalah aplikasi web full-stack modern untuk Rumah Makan Salwa yang menyediakan solusi digital untuk operasi restoran. Aplikasi ini dibangun menggunakan Laravel, React, dan Filament untuk memberikan pengalaman yang mulus baik bagi pelanggan maupun admin.
@@ -80,12 +94,13 @@ Sora adalah aplikasi web full-stack modern untuk Rumah Makan Salwa yang menyedia
 - Desain responsif untuk semua perangkat
 
 #### Teknologi
-- **Frontend:** React, Inertia.js, Tailwind CSS
-- **Backend:** Laravel 10.x
-- **Database:** MySQL/PostgreSQL
+- **Frontend:** React, Inertia.js, Tailwind CSS, Framer Motion
+- **Backend:** Laravel 12 with Filament
+- **Database:** MySQL (for Cpanel) / PostgreSQL (for local atau laptop)
 - **Admin Panel:** Filament 3.x
 
 ### API Documentation
+<img src="api.png">
 
 #### Base URL
 `/api`
@@ -112,8 +127,7 @@ API menggunakan sistem autentikasi Laravel dengan autentikasi berbasis sesi.
 ##### Keranjang
 - `GET /carts` - Daftar item keranjang user
 - `POST /carts` - Tambah item ke keranjang
-- `PUT /carts/{cart}` - Update item keranjang
-- `DELETE /carts/{cart}` - Hapus item dari keranjang
+- `PUT /carts/{cart}`
 
 ##### Reservasi
 - `GET /reservations` - Daftar reservasi user
@@ -128,6 +142,7 @@ API menggunakan sistem autentikasi Laravel dengan autentikasi berbasis sesi.
 - `GET /payments/{payment}` - Detail pembayaran
 
 ### User Manual
+<img src="usermanual.png">
 
 #### Panduan Pelanggan
 
@@ -251,8 +266,8 @@ Semua file dokumentasi dapat diakses melalui repository GitHub di folder `/docs`
 ### Repository Information
 - **Main Repository**: https://github.com/brosora6/sora.git
 - **Branch**: main
-- **Latest Release**: v1.0.0
-- **Release Date**: 01/05/2025
+- **Latest Release**: final
+- **Release Date**: 23/05/2025
 
 ### Repository Structure
 ```
@@ -309,13 +324,13 @@ sora/
 
 5. Start the development server:
    ```bash
-   php artisan serve
-   npm run dev
+   composer run dev
    ```
 
 ### Release Notes
-- **v1.0.0** (01/05/2025)
+- **final** (23/05/2025)
   - Initial release
+  - Deploy on Cpanel hosting
   - Complete restaurant management system
   - Admin panel implementation
   - Online ordering system
@@ -324,6 +339,7 @@ sora/
   - Documentation and user manuals
 
 ## 4. Deployed Application: Link aplikasi yang sudah di-deploy (jika ada)
+<img src="deploy.png">
 https://sorasalwa.web.id
 
 ---

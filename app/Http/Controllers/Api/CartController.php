@@ -114,11 +114,27 @@ class CartController extends Controller
         try {
             DB::beginTransaction();
 
+            // Check if user is authenticated
+            if (!Auth::guard('customer')->check()) {
+                return response()->json([
+                    'message' => 'Unauthorized.',
+                    'error' => 'User not authenticated'
+                ], 401);
+            }
+
             // Check if cart belongs to user
             if ($cart->pelanggan_id !== Auth::guard('customer')->id()) {
                 return response()->json([
                     'message' => 'Unauthorized.',
+                    'error' => 'Cart does not belong to user'
                 ], 403);
+            }
+
+            // Check if cart is part of a completed payment
+            if ($cart->payment && $cart->payment->status === 'completed') {
+                return response()->json([
+                    'message' => 'Cannot remove items from completed payments.',
+                ], 422);
             }
 
             // Restore stock
@@ -134,8 +150,10 @@ class CartController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Cart deletion error: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Failed to remove item from cart.',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
